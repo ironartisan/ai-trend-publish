@@ -46,14 +46,24 @@ export class PaperWorkflow implements Workflow {
     await this.publisher.refresh();
   }
 
-  private async extractPapersFromGithub(): Promise<{title: string, url: string, twitterUrl?: string}[]> {
+  private async extractPapersFromGithub(): Promise<{
+    title: string, 
+    url: string, 
+    twitterUrl?: string,
+    paperContent: string
+  }[]> {
     const githubUrl = "https://raw.githubusercontent.com/dair-ai/ML-Papers-of-the-Week/main/README.md";
     const markdownContent = await this.crawler.fetchContent(githubUrl);
     
     console.log("[DEBUG] Raw Markdown Content:", markdownContent.substring(0, 500));
     
     // 解析Markdown表格中的论文信息
-    const papers: {title: string, url: string, twitterUrl?: string}[] = [];
+    const papers: {
+      title: string, 
+      url: string, 
+      twitterUrl?: string,
+      paperContent: string
+    }[] = [];
     
     // 首先找到第一个表格的范围
     const tableStartRegex = /^\|\s*\*\*Paper\*\*\s*\|\s*\*\*Links\*\*\s*\|/m;
@@ -94,6 +104,9 @@ export class PaperWorkflow implements Workflow {
       const contentCell = cells[0];
       const linksCell = cells[1];
       
+      // 保存完整的 Paper 单元格内容
+      const paperContent = contentCell.trim();
+      
       // 从内容单元格提取标题
       let title = '';
       
@@ -122,27 +135,33 @@ export class PaperWorkflow implements Workflow {
         papers.push({ 
           title, 
           url: paperUrl,
-          twitterUrl
+          twitterUrl,
+          paperContent
         });
-        console.log("[DEBUG] Added paper:", { title, url: paperUrl, twitterUrl });
+        console.log("[DEBUG] Added paper:", { title, url: paperUrl, twitterUrl, paperContent });
       }
     }
     
     return papers;
   }
 
-  private async processPaper(paper: {title: string, url: string, twitterUrl?: string}, index: number): Promise<PaperContent> {
+  private async processPaper(paper: {
+    title: string, 
+    url: string, 
+    twitterUrl?: string,
+    paperContent: string
+  }, index: number): Promise<PaperContent> {
     try {
-      // 获取论文内容
-      const paperContent = await this.crawler.fetchContent(paper.url);
-      
-      // 限制内容长度，取前 4000 个字符
-      const truncatedContent = paperContent.substring(0, 8000);
-      console.log(`[内容处理] ${paper.title} 原始内容长度: ${paperContent.length}, 截断后长度: ${truncatedContent.length}`);
+      // 组合 paperContent 和 URL 作为输入
+      const combinedContent = `
+论文描述：
+${paper.paperContent}
+
+论文链接：${paper.url}`;
       
       // 使用AI总结论文内容
-      const summary = await this.summarizer.summarize(truncatedContent, {
-        minLength: 200,
+      const summary = await this.summarizer.summarize(combinedContent, {
+        minLength: 100,
         maxLength: 500,
         language: "中文"
       });
@@ -170,7 +189,8 @@ export class PaperWorkflow implements Workflow {
       if (message.includes('HTTP error! status: 400')) {
         try {
           console.log(`[内容处理] ${paper.title} 尝试使用备用参数重试...`);
-          const summary = await this.summarizer.summarize(paper.title, {
+          const combinedContent = `${paper.paperContent}\n${paper.url}`;
+          const summary = await this.summarizer.summarize(combinedContent, {
             minLength: 100,
             maxLength: 500,
             language: "中文"
