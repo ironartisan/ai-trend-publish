@@ -69,6 +69,47 @@ export const sourceConfigs: SourceConfig = {
       { identifier: "https://x.com/huggingface" },
       { identifier: "https://x.com/weights_biases" },
       { identifier: "https://x.com/replicate" },
+      //custom
+      { identifier: "https://x.com/dotey" },
+      { identifier: "https://x.com/DrJimFan" },
+      { identifier: "https://x.com/AndrewYNg" },
+      { identifier: "https://x.com/DeepLearn007" },
+      { identifier: "https://x.com/TamaraMcCleary" },
+      { identifier: "https://x.com/IoTRecruiting" },
+      { identifier: "https://x.com/KirkDBorne" },
+      { identifier: "https://x.com/BernardMarr" },
+      { identifier: "https://x.com/DavidBrin" },
+      { identifier: "https://x.com/drfeifei" },
+      
+      { identifier: "https://x.com/orangebook_" },
+      { identifier: "https://x.com/navalismhq" },
+      { identifier: "https://x.com/sahilbloom" },
+      { identifier: "https://x.com/dickiebush" },
+      { identifier: "https://x.com/naval" },
+      { identifier: "https://x.com/fortelabs" },
+      { identifier: "https://x.com/david_perell" },
+      { identifier: "https://x.com/jamesclear" },
+      { identifier: "https://x.com/alexhormozi" },
+      { identifier: "https://x.com/shaneaparrish" },
+      
+      // Tech & Thought Leaders
+      { identifier: "https://x.com/EMostaque" },
+      { identifier: "https://x.com/paulg" },
+      { identifier: "https://x.com/waitbutwhy" },
+      { identifier: "https://x.com/mmay3r" },
+      { identifier: "https://x.com/dhh" },
+      { identifier: "https://x.com/balajis" },
+      { identifier: "https://x.com/jackbutcher" },
+      { identifier: "https://x.com/visualizevalue" },
+      { identifier: "https://x.com/george__mack" },
+      { identifier: "https://x.com/simonsinek" },
+      
+      // Authors & Entrepreneurs
+      { identifier: "https://x.com/tferriss" },
+      { identifier: "https://x.com/sama" },
+      { identifier: "https://x.com/hubermanlab" },
+      { identifier: "https://x.com/jaltma" },
+      { identifier: "https://x.com/julian" }
     ],
   },
   Tech: {

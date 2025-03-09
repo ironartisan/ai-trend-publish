@@ -32,9 +32,9 @@ export const startCronJobs = async () => {
   console.log("初始化定时任务...");
   initializeWorkflows();
 
-  // 每天凌晨3点执行
+  // 每天凌晨7点执行
   cron.schedule(
-    "0 3 * * *",
+    "0 7 * * *",
     async () => {
       const dayOfWeek = new Date().getDay(); // 0是周日，1-6是周一到周六
       const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek; // 将周日的0转换为7

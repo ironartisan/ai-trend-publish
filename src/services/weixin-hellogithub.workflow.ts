@@ -63,8 +63,8 @@ export class WeixinHelloGithubWorkflow implements Workflow {
       console.log("5. 准备发布到微信...");
       await this.publisher.publish(
         html,
-        `本期精选 GitHub 热门 AI 开源项目，第一名 ${firstItem.name} 项目备受瞩目，发现最新最酷的人工智能开源工具`,
-        `本期精选 GitHub 热门 AI 开源项目，第一名 ${firstItem.name} 项目备受瞩目，发现最新最酷的人工智能开源工具`,
+        `本期精选 GitHub 热门 AI 开源项目`,
+        `本期精选 GitHub 热门 AI 开源项目`,
         mediaId
       );
 

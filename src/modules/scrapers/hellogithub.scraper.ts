@@ -15,7 +15,10 @@ export class HelloGithubScraper {
    */
   public async getHotItems(page: number = 1): Promise<AIGithubItem[]> {
     try {
-      const url = `${HelloGithubScraper.API_URL}/?sort_by=featured&page=${page}&rank_by=newest&tid=juBLV86qa5`;
+      // AI相关仓库整理
+      // const url = `${HelloGithubScraper.API_URL}/?sort_by=featured&page=${page}&rank_by=newest&tid=juBLV86qa5`;
+      // 热门教程整理
+      const url = `${HelloGithubScraper.API_URL}/?sort_by=featured&tid=0LByh3tjUO`;
       const response = await fetch(url);
       const data = await response.json();
 
