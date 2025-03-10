@@ -70,6 +70,7 @@ export const sourceConfigs: SourceConfig = {
       { identifier: "https://x.com/weights_biases" },
       { identifier: "https://x.com/replicate" },
       //custom
+      { identifier: "https://x.com/omarsar0" },
       { identifier: "https://x.com/dotey" },
       { identifier: "https://x.com/DrJimFan" },
       { identifier: "https://x.com/AndrewYNg" },
@@ -109,7 +110,6 @@ export const sourceConfigs: SourceConfig = {
       { identifier: "https://x.com/sama" },
       { identifier: "https://x.com/hubermanlab" },
       { identifier: "https://x.com/jaltma" },
-      { identifier: "https://x.com/julian" }
     ],
   },
   Tech: {

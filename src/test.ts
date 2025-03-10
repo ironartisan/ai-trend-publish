@@ -5,13 +5,13 @@ import { DbConfigSource } from "./utils/config/sources/db-config.source";
 import { MySQLDB } from "./utils/db/mysql.db";
 import { WeixinAIBenchWorkflow } from "./services/weixin-aibench.workflow";
 import { WeixinHelloGithubWorkflow } from "./services/weixin-hellogithub.workflow";
+import { PaperWorkflow } from "./services/paper.workflow";
 async function bootstrap() {
   const configManager = ConfigManager.getInstance();
   await configManager.initDefaultConfigSources();
 
 
   const weixinWorkflow = new WeixinWorkflow();
-
   await weixinWorkflow.process();
 
   // const weixinAIBenchWorkflow = new WeixinAIBenchWorkflow();
@@ -20,6 +20,9 @@ async function bootstrap() {
   // const weixinHelloGithubWorkflow = new WeixinHelloGithubWorkflow();
   // await weixinHelloGithubWorkflow.refresh();
   // await weixinHelloGithubWorkflow.process();
+
+  // const paperWorkflow = new PaperWorkflow();
+  // await paperWorkflow.process();
 }
 
 bootstrap().catch(console.error);
