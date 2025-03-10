@@ -36,7 +36,12 @@ export const sourceConfigs: SourceConfig = {
       { identifier: "https://buttondown.com/ainews/archive/" },
       { identifier: "https://www.aibase.com/zh/daily" },
       { identifier: "https://www.aibase.com/zh/news" },
+      { identifier: "https://m.weibo.cn/u/1402400261?luicode=10000011&lfid=231583" },
+      { identifier: "https://m.weibo.cn/u/1727858283?t=0&luicode=10000011&lfid=1076031402400261" },
+      { identifier: "https://towardsdatascience.com/latest/" },
+      { identifier: "https://medium.com/?tag=machine-learning" },
     ],
+    
     twitter: [
       { identifier: "https://x.com/OpenAIDevs" },
       { identifier: "https://x.com/xai" },

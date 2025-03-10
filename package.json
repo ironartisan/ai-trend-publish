@@ -42,6 +42,7 @@
     "node-cron": "^3.0.3",
     "openai": "^4.85.4",
     "playht": "^0.13.0",
+    "puppeteer": "^24.4.0",
     "reflect-metadata": "^0.2.2",
     "resend": "^4.0.1-alpha.0",
     "sharp": "^0.33.5",
