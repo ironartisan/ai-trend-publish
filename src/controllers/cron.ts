@@ -91,3 +91,9 @@ export const initCronJobs = () => {
   
   console.log("定时任务已初始化，将在每天上午5点执行");
 };
+
+// 添加此函数以保持向后兼容性
+export const startCronJobs = async () => {
+  console.log("使用 startCronJobs 函数已被弃用，请使用 initCronJobs 函数");
+  initCronJobs();
+};
