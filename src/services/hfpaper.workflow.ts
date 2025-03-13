@@ -12,6 +12,7 @@ import { Workflow } from './interfaces/workflow.interface';
 import { ImageGeneratorFactory } from "../providers/image-gen/image-generator-factory";
 import { WeixinTemplate } from '../modules/render/interfaces/template.type';
 import * as cheerio from 'cheerio';
+import { getPaperSummarizerSystemPrompt, getPaperSummarizerUserPrompt } from "../prompts/paper-summarizer.prompt";
 
 interface HFPaper {
   title: string;
@@ -20,6 +21,15 @@ interface HFPaper {
   abstract?: string;
   publishDate?: string;
   arxivUrl?: string;
+  aiAnalysis?: {
+    title: string;
+    authors: string[];
+    content: string;
+    keywords: string[];
+    score: number;
+    contribution: string;
+    summary: string;
+  };
 }
 
 export class HFPaperWorkflow implements Workflow {
@@ -180,15 +190,36 @@ export class HFPaperWorkflow implements Workflow {
     for (const paper of papers) {
       if (paper.abstract) {
         try {
-          const summary = await this.summarizer.summarize(paper.abstract, {
-            minLength: 100,
-            maxLength: 500,
-            language: "中文"
+          const paperContent = `
+标题：${paper.title}
+
+作者：${paper.authors.join(', ')}
+
+摘要：
+${paper.abstract}
+
+${paper.arxivUrl ? `arXiv链接：${paper.arxivUrl}` : `论文链接：${paper.url}`}`;
+
+          const summary = await this.summarizer.summarize(paperContent, {
+            minLength: 200,
+            maxLength: 800,
+            language: "中文",
+            systemPrompt: getPaperSummarizerSystemPrompt,
+            userPrompt: getPaperSummarizerUserPrompt
           });
           
           papersWithSummary.push({
             ...paper,
-            abstract: summary.content
+            abstract: summary.content,
+            aiAnalysis: {
+              title: summary.title,
+              authors: summary.authors || [],
+              content: summary.content,
+              keywords: summary.keywords || [],
+              score: summary.score || 0,
+              contribution: summary.contribution || '',
+              summary: summary.summary || ''
+            }
           });
         } catch (error) {
           console.error(`Error generating summary for ${paper.title}:`, error);
@@ -212,19 +243,28 @@ export class HFPaperWorkflow implements Workflow {
     const templateData: WeixinTemplate[] = papers.map(paper => ({
       id: `hf-paper-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       title: paper.title,
-      content: `${paper.abstract || '无摘要'}
+      content: `${paper.aiAnalysis?.summary ? `💡 一句话总结：${paper.aiAnalysis.summary}` : ''}
+${'='.repeat(30)}
+🏷️ 关键词：${paper.aiAnalysis?.keywords?.join('、') || '无'}
 
+${'='.repeat(30)}
+📝 
+${paper.abstract || '无摘要'}
 
 ${'='.repeat(30)}
 
 
-${paper.arxivUrl ? `论文链接：${paper.arxivUrl}` : `论文链接：${paper.url}`}`.trim(),
+
+🔗 论文链接：${paper.arxivUrl || paper.url}`.trim(),
       url: paper.url,
       publishDate: paper.publishDate || new Date().toISOString(),
-      keywords: [],
+      keywords: paper.aiAnalysis?.keywords || [],
       metadata: {
-        keywords: [],
-        authors: paper.authors
+        keywords: paper.aiAnalysis?.keywords || [],
+        authors: paper.authors,
+        summary: paper.aiAnalysis?.summary,
+        contribution: paper.aiAnalysis?.contribution,
+        score: paper.aiAnalysis?.score
       }
     }));
 
@@ -237,7 +277,7 @@ ${paper.arxivUrl ? `论文链接：${paper.arxivUrl}` : `论文链接：${paper.
     // 生成封面图并上传
     const imageGenerator = await ImageGeneratorFactory.getInstance().getGenerator("ALIWANX21");
     const imageUrl = await imageGenerator.generate({
-      prompt: "AI论文研究精选，机器学习最新进展，科技感封面", 
+      prompt: "AI论文研究精选，机器学习最新进展，具有学术气息，不要出现文字", 
       size: "1440*768"
     });
     const mediaId = await this.publisher.uploadImage(imageUrl);

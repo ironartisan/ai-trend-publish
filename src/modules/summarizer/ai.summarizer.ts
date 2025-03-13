@@ -26,14 +26,19 @@ export class AISummarizer implements ContentSummarizer {
 
     return RetryUtil.retryOperation(async () => {
       const llm = await this.llmFactory.getLLMProvider(await this.configInstance.get("AI_SUMMARIZER_LLM_PROVIDER"));
+      
+      // 使用自定义提示词或默认提示词
+      const systemPromptFn = options?.systemPrompt || getSummarizerSystemPrompt;
+      const userPromptFn = options?.userPrompt || getSummarizerUserPrompt;
+      
       const response = await llm.createChatCompletion([
         {
           role: "system",
-          content: getSummarizerSystemPrompt()
+          content: systemPromptFn()
         },
         {
           role: "user",
-          content: getSummarizerUserPrompt({
+          content: userPromptFn({
             content,
             language: options?.language,
             minLength: options?.minLength,
@@ -51,15 +56,26 @@ export class AISummarizer implements ContentSummarizer {
       }
 
       try {
-        const summary = JSON.parse(completion) as Summary;
-        if (
-          !summary.title ||
-          !summary.content
-        ) {
+        // 添加日志记录以便调试
+        console.log("LLM Response:", completion);
+
+        // 尝试清理可能的格式问题
+        const cleanedCompletion = completion
+          .replace(/^```json\s*/, '') // 移除可能的 JSON 代码块标记
+          .replace(/\s*```$/, '')     // 移除结尾的代码块标记
+          .trim();                    // 移除首尾空白
+
+        const summary = JSON.parse(cleanedCompletion) as Summary;
+        
+        // 验证必要字段
+        if (!summary.title || !summary.content) {
+          console.error("Invalid summary format:", summary);
           throw new Error("摘要结果格式不正确");
         }
+
         return summary;
       } catch (error) {
+        console.error("Raw completion:", completion);
         throw new Error(
           `解析摘要结果失败: ${error instanceof Error ? error.message : "未知错误"}`
         );

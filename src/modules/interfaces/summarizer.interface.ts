@@ -6,8 +6,10 @@ export interface ContentSummarizer {
 export interface Summary {
   title: string;
   content: string;
-  keywords?: string[];
-  sentiment?: string;
-  category?: string;
-  language?: string;
+  keywords: string[];
+  score?: number;
+  authors?: string[];
+  contribution?: string;
+  summary?: string;
+  impact?: string;
 }

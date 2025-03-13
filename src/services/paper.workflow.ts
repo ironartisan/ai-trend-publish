@@ -7,6 +7,7 @@ import { ImageGeneratorFactory } from "../providers/image-gen/image-generator-fa
 import { AISummarizer } from "../modules/summarizer/ai.summarizer";
 import * as cliProgress from "cli-progress";
 import { Summary } from "../modules/interfaces/summarizer.interface";
+import { getPaperSummarizerSystemPrompt, getPaperSummarizerUserPrompt } from "../prompts/paper-summarizer.prompt";
 
 interface PaperContent {
   id: string;
@@ -152,18 +153,22 @@ export class PaperWorkflow implements Workflow {
     paperContent: string
   }, index: number): Promise<PaperContent> {
     try {
-      // 组合 paperContent 和 URL 作为输入
+      // 组合论文内容
       const combinedContent = `
+标题：${paper.title}
+
 论文描述：
 ${paper.paperContent}
 
 论文链接：${paper.url}`;
       
-      // 使用AI总结论文内容
+      // 使用论文专用的总结提示词
       const summary = await this.summarizer.summarize(combinedContent, {
-        minLength: 100,
-        maxLength: 500,
-        language: "中文"
+        minLength: 200,
+        maxLength: 800,
+        language: "中文",
+        systemPrompt: getPaperSummarizerSystemPrompt,
+        userPrompt: getPaperSummarizerUserPrompt
       });
       
       this.stats.success++;

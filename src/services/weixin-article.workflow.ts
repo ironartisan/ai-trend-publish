@@ -93,11 +93,11 @@ export class WeixinWorkflow {
 
       // 检查 API 额度
       // deepseek
-      const deepSeekBalance = await this.deepSeekClient.getCNYBalance();
-      console.log("DeepSeek余额：", deepSeekBalance);
-      if (deepSeekBalance < 1.0) {
-        this.notifier.warning("DeepSeek", "余额小于一元");
-      }
+      // const deepSeekBalance = await this.deepSeekClient.getCNYBalance();
+      // console.log("DeepSeek余额：", deepSeekBalance);
+      // if (deepSeekBalance < 1.0) {
+      //   this.notifier.warning("DeepSeek", "余额小于一元");
+      // }
       // 1. 获取数据源
       const sourceConfigs = await getCronSources();
 
@@ -229,7 +229,7 @@ export class WeixinWorkflow {
 
       // 生成封面图片
       const imageGenerator = await ImageGeneratorFactory.getInstance().getGenerator("ALIWANX21");
-      const imageUrl = await imageGenerator.generate({ prompt: "AI新闻日报的封面", size: "1440*768" });
+      const imageUrl = await imageGenerator.generate({ prompt: "AI新闻日报的封面，不要出现文字，具有科技感", size: "1440*768" });
       console.log(`[封面图片] 封面图片生成任务ID: ${imageUrl}`);
 
       // 上传封面图片
