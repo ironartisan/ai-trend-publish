@@ -13,8 +13,8 @@ async function bootstrap() {
   await configManager.initDefaultConfigSources();
 
 
-  const weixinWorkflow = new WeixinWorkflow();
-  await weixinWorkflow.process();
+  // const weixinWorkflow = new WeixinWorkflow();
+  // await weixinWorkflow.process();
 
   // const weixinAIBenchWorkflow = new WeixinAIBenchWorkflow();
   // await weixinAIBenchWorkflow.process();
@@ -27,8 +27,8 @@ async function bootstrap() {
   // await paperWorkflow.process();
 
 
-  // const hfPaperWorkflow = new HFPaperWorkflow();
-  // await hfPaperWorkflow.process();
+  const hfPaperWorkflow = new HFPaperWorkflow();
+  await hfPaperWorkflow.process();
 }
 
 bootstrap().catch(console.error);

@@ -84,8 +84,8 @@ export class HFPaperWorkflow implements Workflow {
       const $ = cheerio.load(response.data);
       const papers: HFPaper[] = [];
 
-      // 限制只处理前20篇论文
-      $('article').slice(0, 20).each((_, element) => {
+      // 限制只处理前20篇论文$('article').slice(0, 20)
+      $('article').each((_, element) => {
         const titleElement = $(element).find('h3');
         const authorElements = $(element).find('.author');
         const dateElement = $(element).find('.date');
@@ -244,17 +244,17 @@ ${paper.arxivUrl ? `arXiv链接：${paper.arxivUrl}` : `论文链接：${paper.u
       id: `hf-paper-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       title: paper.title,
       content: `${paper.aiAnalysis?.summary ? `💡 一句话总结：${paper.aiAnalysis.summary}` : ''}
-${'='.repeat(30)}
+<br>
 🏷️ 关键词：${paper.aiAnalysis?.keywords?.join('、') || '无'}
 
-${'='.repeat(30)}
+<br>
 📝 
 ${paper.abstract || '无摘要'}
 
-${'='.repeat(30)}
 
 
 
+<br>
 🔗 论文链接：${paper.arxivUrl || paper.url}`.trim(),
       url: paper.url,
       publishDate: paper.publishDate || new Date().toISOString(),
