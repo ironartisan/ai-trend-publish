@@ -10,7 +10,4 @@ export interface Summary {
   title: string;
   content: string;
   keywords?: string[];
-  sentiment?: string;
-  category?: string;
-  language?: string;
 }

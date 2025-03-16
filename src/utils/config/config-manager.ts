@@ -1,8 +1,10 @@
 import { IConfigSource } from "./interfaces/config-source.interface.ts";
 import { DbConfigSource } from "./sources/db-config.source.ts";
 import { EnvConfigSource } from "./sources/env-config.source.ts";
-import { MySQLDB } from "../db/mysql.db.ts";
-import process from "node:process";
+import { Logger } from "@zilla/logger";
+
+const logger = new Logger("ConfigManager");
+
 export class ConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -75,15 +77,8 @@ export class ConfigManager {
     this.addSource(new EnvConfigSource());
     // Database
     if (await this.get<boolean>("ENABLE_DB")) {
-      console.log("DB enabled");
-      const db = await MySQLDB.getInstance({
-        host: process.env.DB_HOST,
-        port: Number(process.env.DB_PORT),
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
-      });
-      this.addSource(new DbConfigSource(db));
+      logger.info("DB enabled");
+      this.addSource(new DbConfigSource());
     }
   }
 

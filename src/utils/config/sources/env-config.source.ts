@@ -1,7 +1,6 @@
-import { IConfigSource } from "../interfaces/config-source.interface.ts";
+import { IConfigSource } from "@src/utils/config/interfaces/config-source.interface.ts";
 import dotenv from "npm:dotenv";
 import process from "node:process";
-
 export class EnvConfigSource implements IConfigSource {
   constructor(public priority: number = 100) {
     dotenv.config();

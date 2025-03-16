@@ -1,31 +1,38 @@
-import { MySQLDB } from "../../db/mysql.db.ts";
+import db from "@src/db/db.ts";
 import { IConfigSource } from "../interfaces/config-source.interface.ts";
+import { config } from "@src/db/schema.ts";
+import { eq } from "npm:drizzle-orm/expressions";
+import { Logger } from "@zilla/logger";
+
+const logger = new Logger("DbConfigSource");
 
 export class DbConfigSource implements IConfigSource {
   constructor(
-    private db: MySQLDB, // 这里应该替换为你的实际数据库连接类型
     public priority: number = 10,
-  ) {}
+  ) {
+  }
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      const result = await this.db.queryOne(
-        "SELECT `value` FROM `config` WHERE `key` = ?",
-        [key],
-      );
+      const result = await db.select().from(config).where(
+        eq(config.key, key),
+      ).limit(1);
 
       if (!result || result.length === 0) {
         return null;
       }
 
-      const value = result.value;
+      const value = result[0].value;
+      if (!value) {
+        return null;
+      }
       try {
         return JSON.parse(value) as T;
       } catch {
         return value as unknown as T;
       }
     } catch (error) {
-      console.error(`Error fetching config from database: ${error}`);
+      logger.error("Error fetching config from database", error);
       return null;
     }
   }

@@ -28,16 +28,19 @@ export class WorkflowStep {
   private startTime: number;
   private metricsCollector?: MetricsCollector;
   private workflowId?: string;
+  private eventId?: string;
 
   constructor(
     stepId: string,
     metricsCollector?: MetricsCollector,
     workflowId?: string,
+    eventId?: string,
   ) {
     this.stepId = stepId;
     this.startTime = Date.now();
     this.metricsCollector = metricsCollector;
     this.workflowId = workflowId;
+    this.eventId = eventId;
   }
 
   async do<T>(
@@ -82,8 +85,8 @@ export class WorkflowStep {
         retryOptions,
       );
 
-      if (this.metricsCollector && this.workflowId) {
-        this.metricsCollector.recordStep(this.workflowId, {
+      if (this.metricsCollector && this.workflowId && this.eventId) {
+        this.metricsCollector.recordStep(this.workflowId, this.eventId, {
           stepId: this.stepId,
           name,
           startTime: stepStartTime,
@@ -99,15 +102,17 @@ export class WorkflowStep {
       }
 
       logger.info(
-        `Step ${name} completed successfully after ${retryResult.attempts} attempts`,
+        `Step ${name} completed successfully after ${retryResult.attempts} attempts, time: ${
+          Date.now() - stepStartTime
+        }ms`,
       );
       return retryResult.result;
     } catch (error: any) {
       // 如果是终止错误，记录日志后直接抛出
       if (error instanceof WorkflowTerminateError) {
         logger.error(`Step ${name} terminated: ${error.message}`);
-        if (this.metricsCollector && this.workflowId) {
-          this.metricsCollector.recordStep(this.workflowId, {
+        if (this.metricsCollector && this.workflowId && this.eventId) {
+          this.metricsCollector.recordStep(this.workflowId, this.eventId, {
             stepId: this.stepId,
             name,
             startTime: stepStartTime,
@@ -165,27 +170,37 @@ export class WorkflowStep {
   }
 }
 
+export interface WorkflowEnv<TEnv = any> {
+  id: string;
+  env: TEnv;
+}
+
 // 工作流入口点基类
 export abstract class WorkflowEntrypoint<TEnv = any, TParams = any> {
-  protected env: TEnv;
+  protected env: WorkflowEnv<TEnv>;
   protected metricsCollector: MetricsCollector;
 
-  constructor(env: TEnv) {
+  constructor(env: WorkflowEnv<TEnv>) {
     this.env = env;
     this.metricsCollector = new MetricsCollector();
   }
 
   async execute(event: WorkflowEvent<TParams>): Promise<void> {
-    this.metricsCollector.startWorkflow(event.id);
-    const step = new WorkflowStep("main", this.metricsCollector, event.id);
+    this.metricsCollector.startWorkflow(this.env.id, event.id);
+    const step = new WorkflowStep(
+      "local-step-execution",
+      this.metricsCollector,
+      this.env.id,
+      event.id,
+    );
 
     try {
       await this.run(event, step);
-      this.metricsCollector.endWorkflow(event.id);
+      this.metricsCollector.endWorkflow(this.env.id, event.id);
     } catch (error: any) {
       // 区分终止错误和其他错误
       const isTerminated = error instanceof WorkflowTerminateError;
-      this.metricsCollector.endWorkflow(event.id, error);
+      this.metricsCollector.endWorkflow(this.env.id, event.id, error);
 
       if (isTerminated) {
         logger.warn(`Workflow terminated: ${error.message}`);

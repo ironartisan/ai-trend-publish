@@ -1,4 +1,9 @@
-import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "./workflow.ts";
+import {
+  WorkflowEntrypoint,
+  WorkflowEnv,
+  WorkflowEvent,
+  WorkflowStep,
+} from "./workflow.ts";
 import { Logger } from "@zilla/logger";
 
 const logger = new Logger("example-workflow");
@@ -18,18 +23,14 @@ type WorkflowParams = {
 
 export class DataProcessingWorkflow
   extends WorkflowEntrypoint<Env, WorkflowParams> {
-  constructor(env: Env) {
-    super(env);
-  }
-
   // 获取工作流统计信息
-  getWorkflowStats(workflowId: string) {
-    return this.metricsCollector.getMetrics(workflowId);
+  getWorkflowStats(eventId: string) {
+    return this.metricsCollector.getWorkflowEventMetrics(this.env.id, eventId);
   }
 
   // 获取所有工作流统计信息
   getAllWorkflowStats() {
-    return this.metricsCollector.getAllMetrics();
+    return this.metricsCollector.getAllWorkflowEventMetrics(this.env.id);
   }
 
   async run(

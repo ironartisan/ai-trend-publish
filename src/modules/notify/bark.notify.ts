@@ -1,16 +1,19 @@
 import axios from "npm:axios";
 import { ConfigManager } from "@src/utils/config/config-manager.ts";
 import { INotifier, Level } from "@src/modules/interfaces/notify.interface.ts";
+import { Logger } from "@zilla/logger";
+
+const logger = new Logger("BarkNotifier");
 
 export class BarkNotifier implements INotifier {
   private barkUrl?: string;
   private enabled: boolean = false;
 
   constructor() {
-    this.refresh();
   }
 
   async refresh(): Promise<void> {
+    const startTime = Date.now();
     const configManager = ConfigManager.getInstance();
     this.enabled = await configManager.get<boolean>("ENABLE_BARK").catch(() =>
       false
@@ -24,6 +27,9 @@ export class BarkNotifier implements INotifier {
         console.warn("Bark URL not configured but Bark is enabled");
       }
     }
+    logger.debug(
+      `BarkNotifier 配置刷新完成, 耗时: ${Date.now() - startTime}ms`,
+    );
   }
   /**
    * 发送 Bark 通知

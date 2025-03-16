@@ -19,7 +19,6 @@ export const getSummarizerSystemPrompt = (): string => {
         "title": "专业的标题",
         "content": "扩充和完善后的内容",
         "keywords": ["关键词1", "关键词2", "关键词3"],
-        "score": 0-100
     }`;
 };
 

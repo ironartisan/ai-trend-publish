@@ -15,6 +15,7 @@ export class DingdingNotify implements INotifier {
 
   async refresh(): Promise<void> {
     const configManager = ConfigManager.getInstance();
+    const startTime = Date.now();
     this.enabled = await configManager.get<boolean>("ENABLE_DINGDING").catch(
       () => false,
     );
@@ -29,6 +30,9 @@ export class DingdingNotify implements INotifier {
         logger.warn("DingDing webhook not configured but DingDing is enabled");
       }
     }
+    logger.debug(
+      `DingDingNotify 配置刷新完成, 耗时: ${Date.now() - startTime}ms`,
+    );
   }
 
   /**

@@ -101,10 +101,6 @@ export abstract class BaseAliyunImageGenerator extends BaseImageGenerator {
     taskId: string,
   ): Promise<AliTaskStatusResponse["output"]> {
     try {
-      logger.debug(`检查任务状态: ${taskId}`, {
-        model: this.model,
-        taskId: taskId,
-      });
       const response = await axios.get<AliTaskStatusResponse>(
         `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
         {
@@ -114,10 +110,6 @@ export abstract class BaseAliyunImageGenerator extends BaseImageGenerator {
           },
         },
       );
-      logger.debug(`任务状态检查成功: ${taskId}`, {
-        model: this.model,
-        response: response.data,
-      });
       return response.data.output;
     } catch (error: any) {
       if (axios.isAxiosError(error)) {

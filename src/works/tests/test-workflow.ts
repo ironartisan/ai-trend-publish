@@ -4,8 +4,11 @@ import { Logger } from "@zilla/logger";
 const logger = new Logger("test-workflow");
 
 const workflow = new DataProcessingWorkflow({
-  API_KEY: "your-api-key",
-  DATABASE_URL: "your-database-url",
+  id: "test-workflow",
+  env: {
+    API_KEY: "your-api-key",
+    DATABASE_URL: "your-database-url",
+  },
 });
 
 Deno.test("执行工作流并获取统计信息", async () => {

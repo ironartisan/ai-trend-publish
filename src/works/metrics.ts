@@ -14,7 +14,7 @@ export interface StepMetric {
 }
 
 export interface WorkflowMetric {
-  workflowId: string;
+  eventId: string;
   startTime: number;
   endTime: number;
   duration: number;
@@ -24,24 +24,31 @@ export interface WorkflowMetric {
 }
 
 export class MetricsCollector {
-  private metrics: Map<string, WorkflowMetric> = new Map();
-  private currentWorkflow?: string;
+  // 两层Map: workflowId -> eventId -> WorkflowMetric
+  private metrics: Map<string, Map<string, WorkflowMetric>> = new Map();
 
-  startWorkflow(workflowId: string): void {
-    this.currentWorkflow = workflowId;
-    this.metrics.set(workflowId, {
-      workflowId,
+  startWorkflow(workflowId: string, eventId: string): void {
+    if (!this.metrics.has(workflowId)) {
+      this.metrics.set(workflowId, new Map());
+    }
+
+    const workflowMetrics = this.metrics.get(workflowId)!;
+    workflowMetrics.set(eventId, {
+      eventId,
       startTime: Date.now(),
       endTime: 0,
       duration: 0,
       status: "success",
       steps: [],
     });
-    logger.info(`Workflow ${workflowId} started`);
+    logger.info(`Workflow ${workflowId} event ${eventId} started`);
   }
 
-  endWorkflow(workflowId: string, error?: Error): void {
-    const metric = this.metrics.get(workflowId);
+  endWorkflow(workflowId: string, eventId: string, error?: Error): void {
+    const workflowMetrics = this.metrics.get(workflowId);
+    if (!workflowMetrics) return;
+
+    const metric = workflowMetrics.get(eventId);
     if (!metric) return;
 
     metric.endTime = Date.now();
@@ -49,21 +56,29 @@ export class MetricsCollector {
     if (error) {
       metric.status = "failure";
       metric.error = error.message;
-      logger.error(`Workflow ${workflowId} failed: ${error.message}`);
+      logger.error(
+        `Workflow ${workflowId} event ${eventId} failed: ${error.message}`,
+      );
     } else {
-      logger.info(`Workflow ${workflowId} completed successfully`);
+      logger.info(
+        `Workflow ${workflowId} event ${eventId} completed successfully`,
+      );
     }
 
     // 计算统计信息
     const stats = this.calculateStats(metric);
-    logger.info("Workflow statistics:", stats);
+    logger.info(`Workflow ${workflowId} event ${eventId} statistics:`, stats);
   }
 
   recordStep(
     workflowId: string,
+    eventId: string,
     stepMetric: Omit<StepMetric, "duration">,
   ): void {
-    const metric = this.metrics.get(workflowId);
+    const workflowMetrics = this.metrics.get(workflowId);
+    if (!workflowMetrics) return;
+
+    const metric = workflowMetrics.get(eventId);
     if (!metric) return;
 
     const duration = stepMetric.endTime - stepMetric.startTime;
@@ -75,12 +90,23 @@ export class MetricsCollector {
     metric.steps.push(fullStepMetric);
   }
 
-  getMetrics(workflowId: string): WorkflowMetric | undefined {
-    return this.metrics.get(workflowId);
+  getWorkflowEventMetrics(
+    workflowId: string,
+    eventId: string,
+  ): WorkflowMetric | undefined {
+    return this.metrics.get(workflowId)?.get(eventId);
   }
 
-  getAllMetrics(): WorkflowMetric[] {
-    return Array.from(this.metrics.values());
+  getAllWorkflowEventMetrics(workflowId: string): WorkflowMetric[] {
+    const workflowMetrics = this.metrics.get(workflowId);
+    if (!workflowMetrics) return [];
+    return Array.from(workflowMetrics.values());
+  }
+
+  getAllWorkflowMetrics(): WorkflowMetric[] {
+    return Array.from(this.metrics.values()).flatMap((workflowMetrics) =>
+      Array.from(workflowMetrics.values())
+    );
   }
 
   private calculateStats(metric: WorkflowMetric) {

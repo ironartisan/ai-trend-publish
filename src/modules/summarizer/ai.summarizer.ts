@@ -13,6 +13,10 @@ import { ConfigManager } from "@src/utils/config/config-manager.ts";
 import { RetryUtil } from "@src/utils/retry.util.ts";
 import { Logger } from "@zilla/logger";
 
+enum SummarizarSetting {
+  AI_SUMMARIZER_LLM_PROVIDER = "AI_SUMMARIZER_LLM_PROVIDER",
+}
+
 const logger = new Logger("ai-summarizer");
 
 export class AISummarizer implements ContentSummarizer {
@@ -22,9 +26,11 @@ export class AISummarizer implements ContentSummarizer {
   constructor() {
     this.llmFactory = LLMFactory.getInstance();
     this.configInstance = ConfigManager.getInstance();
-    this.configInstance.get("AI_SUMMARIZER_LLM_PROVIDER").then((provider) => {
-      logger.info(`Summarizer当前使用的LLM模型: ${provider}`);
-    });
+    this.configInstance.get(SummarizarSetting.AI_SUMMARIZER_LLM_PROVIDER).then(
+      (provider) => {
+        logger.info(`Summarizer当前使用的LLM模型: ${provider}`);
+      },
+    );
   }
 
   async summarize(
@@ -37,7 +43,9 @@ export class AISummarizer implements ContentSummarizer {
 
     return RetryUtil.retryOperation(async () => {
       const llm = await this.llmFactory.getLLMProvider(
-        await this.configInstance.get("AI_SUMMARIZER_LLM_PROVIDER"),
+        await this.configInstance.get(
+          SummarizarSetting.AI_SUMMARIZER_LLM_PROVIDER,
+        ),
       );
       const response = await llm.createChatCompletion([
         {
@@ -88,7 +96,9 @@ export class AISummarizer implements ContentSummarizer {
   ): Promise<string> {
     return RetryUtil.retryOperation(async () => {
       const llm = await this.llmFactory.getLLMProvider(
-        await this.configInstance.get("AI_SUMMARIZER_LLM_PROVIDER"),
+        await this.configInstance.get(
+          SummarizarSetting.AI_SUMMARIZER_LLM_PROVIDER,
+        ),
       );
       const response = await llm.createChatCompletion([
         {

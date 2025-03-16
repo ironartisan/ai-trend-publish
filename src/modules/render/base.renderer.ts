@@ -43,14 +43,12 @@ export abstract class BaseTemplateRenderer<T extends ejs.Data> {
 
     // 1. 首先尝试从exe内部资源加载
     try {
-      logger.debug("尝试从exe内部加载模板文件:", templatePath);
       // 使用 Deno.stat 检查资源是否存在
       const stat = await Deno.stat(import.meta.dirname + templatePath);
       if (stat.isFile) {
         const bundledTemplate = await Deno.readFile(
           import.meta.dirname + templatePath,
         );
-        logger.debug("从exe内部加载模板文件成功:", templatePath);
         return decoder.decode(bundledTemplate);
       }
     } catch (error) {
@@ -60,7 +58,6 @@ export abstract class BaseTemplateRenderer<T extends ejs.Data> {
     // 2. 尝试使用相对于当前工作目录的路径（开发时使用）
     try {
       const absolutePath = join(Deno.cwd(), templatePath);
-      logger.debug("尝试从工作目录加载模板文件:", absolutePath);
       const fileContent = Deno.readFileSync(absolutePath);
       if (fileContent) {
         return decoder.decode(fileContent);
@@ -77,7 +74,6 @@ export abstract class BaseTemplateRenderer<T extends ejs.Data> {
         execPath.lastIndexOf(Deno.build.os === "windows" ? "\\" : "/"),
       );
       const resourcePath = join(execDir, templatePath);
-      logger.info("尝试从可执行文件目录加载模板文件:", resourcePath);
       const fileContent = Deno.readFileSync(resourcePath);
       if (fileContent) {
         return decoder.decode(fileContent);

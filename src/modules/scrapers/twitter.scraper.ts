@@ -17,8 +17,12 @@ export class TwitterScraper implements ContentScraper {
   }
 
   async refresh(): Promise<void> {
+    const startTime = Date.now();
     this.xApiBearerToken = await ConfigManager.getInstance().get(
       "X_API_BEARER_TOKEN",
+    );
+    logger.debug(
+      `TwitterScraper 初始化完成, 耗时: ${Date.now() - startTime}ms`,
     );
   }
 
@@ -75,13 +79,12 @@ export class TwitterScraper implements ContentScraper {
             content: content,
             url: tweet.url,
             publishDate: formatDate(tweet.createdAt),
-            score: 0,
             media: media,
             metadata: {
               platform: "twitter",
               username,
             },
-          };
+          } as ScrapedContent;
         });
 
       if (scrapedContent.length > 0) {
@@ -127,7 +130,6 @@ export class TwitterScraper implements ContentScraper {
         content: quoted_tweet.text,
         url: quoted_tweet.url,
         publishDate: formatDate(quoted_tweet.createdAt),
-        score: 0,
         media: this.getMediaList(quoted_tweet.extendedEntities),
         metadata: {
           platform: "twitter",

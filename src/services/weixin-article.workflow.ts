@@ -1,4 +1,4 @@
-import { getCronSources } from "@src/data-sources/getCronSources.ts";
+import { getDataSources } from "../data-sources/getDataSources.ts";
 import { ContentRanker } from "@src/modules/content-rank/ai.content-ranker.ts";
 import { ContentPublisher } from "@src/modules/interfaces/publisher.interface.ts";
 import {
@@ -17,6 +17,7 @@ import { WeixinArticleTemplateRenderer } from "@src/modules/render/article.rende
 import { ConfigManager } from "@src/utils/config/config-manager.ts";
 import {
   WorkflowEntrypoint,
+  WorkflowEnv,
   WorkflowEvent,
   WorkflowStep,
 } from "@src/works/workflow.ts";
@@ -27,7 +28,7 @@ import ProgressBar from "jsr:@deno-library/progress";
 const logger = new Logger("weixin-article-workflow");
 
 interface WeixinWorkflowEnv {
-  id?: string;
+  name: string;
 }
 
 // 工作流参数类型定义
@@ -51,7 +52,7 @@ export class WeixinArticleWorkflow
     contents: 0,
   };
 
-  constructor(env: WeixinWorkflowEnv) {
+  constructor(env: WorkflowEnv<WeixinWorkflowEnv>) {
     super(env);
     this.scraper = new Map<string, ContentScraper>();
     this.scraper.set("fireCrawl", new FireCrawlScraper());
@@ -63,26 +64,34 @@ export class WeixinArticleWorkflow
     this.contentRanker = new ContentRanker();
   }
 
+  public getWorkflowStats(eventId: string) {
+    return this.metricsCollector.getWorkflowEventMetrics(this.env.id, eventId);
+  }
+
   async run(
     event: WorkflowEvent<WeixinWorkflowParams>,
     step: WorkflowStep,
   ): Promise<void> {
     try {
-      logger.info("=== 开始执行微信工作流 ===");
+      logger.info(
+        `[工作流开始] 开始执行微信工作流, 当前工作流实例ID: ${this.env.id} 触发事件ID: ${event.id}`,
+      );
       await this.notifier.info("工作流开始", "开始执行内容抓取和处理");
 
       // 获取数据源
       const sourceConfigs = await step.do("fetch-sources", async () => {
-        const configs = await getCronSources();
-        if (!configs.AI) {
-          throw new WorkflowTerminateError("未找到AI相关数据源配置");
+        const configs = await getDataSources();
+        if (!configs.firecrawl) {
+          throw new WorkflowTerminateError("未找到firecrawl数据源配置");
+        }
+        if (!configs.twitter) {
+          throw new WorkflowTerminateError("未找到twitter数据源配置");
         }
         return configs;
       });
 
-      const sourceIds = sourceConfigs.AI;
-      const totalSources = sourceIds.firecrawl.length +
-        sourceIds.twitter.length;
+      const totalSources = sourceConfigs.firecrawl.length +
+        sourceConfigs.twitter.length;
 
       if (totalSources === 0) {
         throw new WorkflowTerminateError("未配置任何数据源");
@@ -100,7 +109,7 @@ export class WeixinArticleWorkflow
         // 创建抓取进度条
         const scrapeProgress = new ProgressBar({
           title: "内容抓取进度",
-          total: sourceIds.firecrawl.length + sourceIds.twitter.length,
+          total: totalSources,
           clear: true, // 完成后清除进度条
           display: ":title | :percent | :completed/:total | :time \n",
         });
@@ -113,7 +122,7 @@ export class WeixinArticleWorkflow
           throw new WorkflowTerminateError("FireCrawlScraper not found");
         }
 
-        for (const source of sourceIds.firecrawl) {
+        for (const source of sourceConfigs.firecrawl) {
           const sourceContents = await this.scrapeSource(
             "FireCrawl",
             source,
@@ -133,7 +142,7 @@ export class WeixinArticleWorkflow
           throw new WorkflowTerminateError("TwitterScraper not found");
         }
 
-        for (const source of sourceIds.twitter) {
+        for (const source of sourceConfigs.twitter) {
           const sourceContents = await this.scrapeSource(
             "Twitter",
             source,
@@ -165,7 +174,9 @@ export class WeixinArticleWorkflow
         if (ranked.length === 0) {
           throw new WorkflowTerminateError("内容排序失败，没有任何内容被评分");
         }
-        logger.info("内容排序完成");
+        // 先按分数排序
+        ranked.sort((a, b) => b.score - a.score);
+        logger.info("[内容排序] 内容排序完成");
         return ranked;
       });
 
@@ -174,27 +185,26 @@ export class WeixinArticleWorkflow
         retries: { limit: 2, delay: "5 second", backoff: "exponential" },
         timeout: "15 minutes",
       }, async () => {
-        // 更新内容分数
-        const scoredContents = allContents.filter((content) => {
-          const rankedContent = rankedContents.find((r) => r.id === content.id);
-          if (rankedContent) {
-            content.score = rankedContent.score;
-            return true;
+        // 根据排名顺序获取对应的文章内容
+        const topContents: ScrapedContent[] = [];
+        const maxArticles = event.payload.maxArticles ||
+          await ConfigManager.getInstance().get("ARTICLE_NUM");
+
+        for (const ranked of rankedContents.slice(0, maxArticles)) {
+          const content = allContents.find((c) => c.id === ranked.id);
+          if (content) {
+            content.metadata.score = ranked.score;
+            content.metadata.wordCount = content.content.length;
+            content.metadata.readTime = Math.ceil(
+              content.metadata.wordCount / 275,
+            );
+            topContents.push(content);
           }
-          return false;
-        });
+        }
 
         logger.debug(
-          "处理排序后的内容",
-          JSON.stringify(scoredContents, null, 2),
-        );
-
-        // 按分数排序并取前N条
-        scoredContents.sort((a, b) => b.score - a.score);
-        const topContents = scoredContents.slice(
-          0,
-          event.payload.maxArticles ||
-            await ConfigManager.getInstance().get("ARTICLE_NUM"),
+          "[内容处理] 取出的文章（润色前）：",
+          JSON.stringify(topContents, null, 2),
         );
 
         // 创建内容处理进度条
@@ -206,15 +216,18 @@ export class WeixinArticleWorkflow
         });
         let processCompleted = 0;
 
-        // 处理每篇内容
-        for (const content of topContents) {
+        // 并发处理所有内容
+        await Promise.all(topContents.map(async (content, _) => {
           await this.processContent(content);
           await processProgress.render(++processCompleted, {
             title: `已处理: ${content.title?.slice(0, 5) || "无标题"}...`,
           });
-        }
+        }));
 
-        logger.debug("处理后的内容", JSON.stringify(topContents, null, 2));
+        logger.debug(
+          "[内容处理] 处理后的内容",
+          JSON.stringify(topContents, null, 2),
+        );
         return topContents;
       });
 
@@ -298,7 +311,7 @@ export class WeixinArticleWorkflow
         - 内容: ${this.stats.contents} 条
         - 发布: 成功`.trim();
 
-      logger.info(`=== ${summary} ===`);
+      logger.info(`[工作流完成] ${summary}`);
 
       if (this.stats.failed > 0) {
         await this.notifier.warning("工作流完成(部分失败)", summary);

@@ -26,21 +26,12 @@ const StoriesSchema = zod.object({
 export class FireCrawlScraper implements ContentScraper {
   private app!: FirecrawlApp;
 
-  constructor() {
-    this.refresh();
-  }
-
   async refresh(): Promise<void> {
-    await this.validateConfig();
+    const startTime = Date.now();
     this.app = new FirecrawlApp({
       apiKey: await ConfigManager.getInstance().get("FIRE_CRAWL_API_KEY"),
     });
-  }
-
-  async validateConfig(): Promise<void> {
-    if (!(await ConfigManager.getInstance().get("FIRE_CRAWL_API_KEY"))) {
-      throw new Error("FIRE_CRAWL_API_KEY 环境变量未设置");
-    }
+    logger.debug(`FireCrawlApp 初始化完成, 耗时: ${Date.now() - startTime}ms`);
   }
 
   private generateId(url: string): string {
@@ -57,6 +48,8 @@ export class FireCrawlScraper implements ContentScraper {
     options?: ScraperOptions,
   ): Promise<ScrapedContent[]> {
     try {
+      await this.refresh();
+      const startTime = Date.now();
       const currentDate = new Date().toLocaleDateString();
 
       // 构建提取提示词
@@ -102,7 +95,9 @@ export class FireCrawlScraper implements ContentScraper {
 
       // 转换为 ScrapedContent 格式
       logger.debug(
-        `[FireCrawl] 从 ${sourceId} 获取到 ${validatedData.stories.length} 条内容`,
+        `[FireCrawl] 从 ${sourceId} 获取到 ${validatedData.stories.length} 条内容 耗时: ${
+          Date.now() - startTime
+        }ms`,
       );
       return validatedData.stories.map((story) => ({
         id: this.generateId(story.link),
