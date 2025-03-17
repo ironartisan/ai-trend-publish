@@ -24,9 +24,11 @@
     "npm:drizzle-orm@0.40": "0.40.0_mysql2@3.13.0",
     "npm:ejs@*": "3.1.10",
     "npm:firecrawl@*": "1.19.0_zod@3.24.2",
+    "npm:highlight.js@11.8.0": "11.8.0",
     "npm:is-what@5": "5.2.0",
     "npm:marked-gfm-heading-id@^4.1.1": "4.1.1_marked@15.0.7",
     "npm:marked-shiki@^1.1.1": "1.2.0_marked@15.0.7_shiki@1.29.2",
+    "npm:marked@4.2.3": "4.2.3",
     "npm:marked@^15.0.6": "15.0.7",
     "npm:mysql2@*": "3.13.0",
     "npm:mysql2@^3.13.0": "3.13.0",
@@ -45,9 +47,9 @@
     "@sapling/markdown@0.3.0": {
       "integrity": "18de575335c391c3defc490b0386375fe87cd41e32ab87f0ec12010dcba2bf60",
       "dependencies": [
-        "npm:marked",
         "npm:marked-gfm-heading-id",
         "npm:marked-shiki",
+        "npm:marked@^15.0.6",
         "npm:shiki"
       ]
     },
@@ -760,6 +762,9 @@
         "@types/hast"
       ]
     },
+    "highlight.js@11.8.0": {
+      "integrity": "sha512-MedQhoqVdr0U6SSnWPzfiadUcDHfN/Wzq25AkXiQv9oiOO/sG0S7XkvpFIqWBl9Yq1UYyYOOVORs5UW2XlPyzg=="
+    },
     "html-void-elements@3.0.0": {
       "integrity": "sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg=="
     },
@@ -818,18 +823,21 @@
       "integrity": "sha512-EeQZieAQmsI6c2tWLx0ETd0VjPwLV8qi+HT0dIsfVMERm0rCIuXfRvZXJbo1SgUi++lmuR1LVY+QzgNiLNvVpw==",
       "dependencies": [
         "github-slugger",
-        "marked"
+        "marked@15.0.7"
       ]
     },
     "marked-shiki@1.2.0_marked@15.0.7_shiki@1.29.2": {
       "integrity": "sha512-N924hp8veE6Mc91g5/kCNVoTU7TkeJfB2G2XEWb+k1fVA0Bck2T0rVt93d39BlOYH6ohP4Q9BFlPk+UkblhXbg==",
       "dependencies": [
-        "marked",
+        "marked@15.0.7",
         "shiki"
       ]
     },
     "marked@15.0.7": {
       "integrity": "sha512-dgLIeKGLx5FwziAnsk4ONoGwHwGPJzselimvlVskE9XLN4Orv9u2VA3GWw/lYUqjfA0rUT/6fqKwfZJapP9BEg=="
+    },
+    "marked@4.2.3": {
+      "integrity": "sha512-slWRdJkbTZ+PjkyJnE30Uid64eHwbwa1Q25INCAYfZlK4o6ylagBy/Le9eWntqJFoFT93ikUKMv47GZ4gTwHkw=="
     },
     "math-intrinsics@1.1.0": {
       "integrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
@@ -1142,6 +1150,7 @@
     }
   },
   "redirects": {
+    "https://deno.land/": "https://deno.com/",
     "https://deno.land/std/fs/copy.ts": "https://deno.land/std@0.224.0/fs/copy.ts",
     "https://deno.land/std/fs/mod.ts": "https://deno.land/std@0.224.0/fs/mod.ts"
   },
