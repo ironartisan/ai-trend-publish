@@ -66,7 +66,7 @@ jobs:
             # 使用PM2重启应用
             export PATH=\"\$HOME/.deno/bin:\$PATH\"
             pm2 delete trend-finder || true
-            pm2 start --name trend-finder --interpreter=\"\$HOME/.deno/bin/deno\" --interpreter-args='run --allow-all' main.ts
+            pm2 start --name trend-finder "deno run --allow-all start"
 
             echo '部署完成'
           "
