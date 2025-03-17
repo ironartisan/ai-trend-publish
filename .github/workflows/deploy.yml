@@ -31,15 +31,16 @@ jobs:
           ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "
             cd ~/app || mkdir -p ~/app && cd ~/app
             rm -rf ./* ./.* 2>/dev/null || true
-            git clone https://github.com/OpenAISpace/ai-trend-publish .
+            git clone https://github.com/OpenAISpace/ai-trend-publish
+            cd ai-trend-publish
             echo '# 数据库配置
-            ENABLE_DB=true
-            DB_HOST=${DB_HOST}
-            DB_PORT=${DB_PORT}
-            DB_USER=${DB_USER}
-            DB_PASSWORD=${DB_PASSWORD}
-            DB_DATABASE=${DB_DATABASE}' > .env
+ENABLE_DB=true
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+DB_DATABASE=${DB_DATABASE}' > .env
             pm2 delete trend-finder || true
-            pm2 start --name trend-finder 'deno run --allow-all start'
+            pm2 start --name trend-finder "deno run --allow-all start"
             echo '部署完成'
           "
