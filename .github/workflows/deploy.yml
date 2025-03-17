@@ -47,6 +47,12 @@ jobs:
           DB_DATABASE=${{ secrets.DB_DATABASE }}
           EOL
           
+      - name: Get Deno Path # 获取 Deno 路径
+        run: |
+          DENO_PATH=$(ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "which deno || echo \$HOME/.deno/bin/deno")
+          echo "DENO_PATH=$DENO_PATH" >> $GITHUB_ENV
+          echo "Deno path: $DENO_PATH"
+
       - name: Create PM2 Config # 创建 PM2 配置文件
         run: |
           cat > ecosystem.config.js << EOL
@@ -54,7 +60,7 @@ jobs:
             apps: [{
               name: 'trend-finder',
               script: 'deno task start',
-              interpreter: '$HOME/.deno/bin/deno',
+              interpreter: '${{ env.DENO_PATH }}',
               env: {
                 NODE_ENV: 'production'
               }
