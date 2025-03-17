@@ -28,12 +28,12 @@ jobs:
               echo '安装 git...'
               sudo apt-get update && sudo apt-get install -y git
             fi
-            
+
             if ! command -v pm2 &> /dev/null; then
               echo '安装 PM2...'
               npm install -g pm2
             fi
-            
+
             if ! command -v deno &> /dev/null; then
               echo '安装 Deno...'
               curl -fsSL https://deno.land/x/install/install.sh | sh
@@ -42,16 +42,16 @@ jobs:
               export DENO_INSTALL=\"\$HOME/.deno\"
               export PATH=\"\$DENO_INSTALL/bin:\$PATH\"
             fi
-            
+
             # 拉取代码
             cd ~/app || mkdir -p ~/app && cd ~/app
-            
+
             if [ -d '.git' ]; then
               git pull
             else
               git clone ${{ secrets.REPO_URL }} .
             fi
-            
+
             # 创建环境变量文件
             cat > .env << EOL
             # 数据库配置
@@ -62,11 +62,11 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
             EOL
-            
+
             # 使用PM2重启应用
             export PATH=\"\$HOME/.deno/bin:\$PATH\"
             pm2 delete trend-finder || true
             pm2 start --name trend-finder --interpreter=\"\$HOME/.deno/bin/deno\" --interpreter-args='run --allow-all' main.ts
-            
+
             echo '部署完成'
           "
