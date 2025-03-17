@@ -43,7 +43,7 @@ jobs:
           scp -i ~/.ssh/id_rsa .env "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/app/ai-trend-publish/"
           ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "
             cd ~/app/ai-trend-publish
-            pm2 delete trend-finder || true
+            pm2 delete trend-finder 2>/dev/null || true
             pm2 start --name trend-finder "deno run --allow-all start"
             echo '部署完成'
           "
