@@ -45,6 +45,6 @@ jobs:
             cd ~/app/ai-trend-publish
             pm2 delete trend-finder 2>/dev/null || true
             source ~/.bashrc
-            pm2 start --name trend-finder 'deno run --allow-all start'
+            pm2 start --name trend-finder '/root/.deno/bin/deno  run --allow-all start'
             echo '部署完成'
           "
