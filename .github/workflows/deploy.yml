@@ -23,34 +23,10 @@ jobs:
       - name: Deploy to Server # 部署到服务器
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "
-            # 确保安装了必要的工具
-            if ! command -v git &> /dev/null; then
-              echo '安装 git...'
-              sudo apt-get update && sudo apt-get install -y git
-            fi
-
-            if ! command -v pm2 &> /dev/null; then
-              echo '安装 PM2...'
-              npm install -g pm2
-            fi
-
-            if ! command -v deno &> /dev/null; then
-              echo '安装 Deno...'
-              curl -fsSL https://deno.land/x/install/install.sh | sh
-              echo 'export DENO_INSTALL=\"\$HOME/.deno\"' >> ~/.bashrc
-              echo 'export PATH=\"\$DENO_INSTALL/bin:\$PATH\"' >> ~/.bashrc
-              export DENO_INSTALL=\"\$HOME/.deno\"
-              export PATH=\"\$DENO_INSTALL/bin:\$PATH\"
-            fi
-
             # 拉取代码
             cd ~/app || mkdir -p ~/app && cd ~/app
 
-            if [ -d '.git' ]; then
-              git pull
-            else
-              git clone ${{ secrets.REPO_URL }} .
-            fi
+            git clone https://github.com/OpenAISpace/ai-trend-publish .
 
             # 创建环境变量文件
             cat > .env << EOL
@@ -64,7 +40,6 @@ jobs:
             EOL
 
             # 使用PM2重启应用
-            export PATH=\"\$HOME/.deno/bin:\$PATH\"
             pm2 delete trend-finder || true
             pm2 start --name trend-finder "deno run --allow-all start"
 
