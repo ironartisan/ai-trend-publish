@@ -23,21 +23,32 @@ jobs:
       - name: Deploy to Server # 部署到服务器
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "
+            # 设置环境变量
+            export DB_HOST='${{ secrets.DB_HOST }}'
+            export DB_PORT='${{ secrets.DB_PORT }}'
+            export DB_USER='${{ secrets.DB_USER }}'
+            export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            export DB_DATABASE='${{ secrets.DB_DATABASE }}'
+
             # 拉取代码
             cd ~/app || mkdir -p ~/app && cd ~/app
 
+            # 如果目录不为空，先清空目录
+            rm -rf ./* ./.* 2>/dev/null || true
+
+            # 克隆仓库
             git clone https://github.com/OpenAISpace/ai-trend-publish .
 
             # 创建环境变量文件
-            cat > .env << EOL
+            cat > .env << EOF
             # 数据库配置
             ENABLE_DB=true
-            DB_HOST=${{ secrets.DB_HOST }}
-            DB_PORT=${{ secrets.DB_PORT }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_DATABASE=${{ secrets.DB_DATABASE }}
-            EOL
+            DB_HOST=$DB_HOST
+            DB_PORT=$DB_PORT
+            DB_USER=$DB_USER
+            DB_PASSWORD=$DB_PASSWORD
+            DB_DATABASE=$DB_DATABASE
+            EOF
 
             # 使用PM2重启应用
             pm2 delete trend-finder || true
