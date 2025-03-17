@@ -47,6 +47,22 @@ jobs:
           DB_DATABASE=${{ secrets.DB_DATABASE }}
           EOL
           
+      - name: Create PM2 Config # 创建 PM2 配置文件
+        run: |
+          cat > ecosystem.config.js << EOL
+          module.exports = {
+            apps: [{
+              name: 'trend-finder',
+              script: 'deno task start',
+              interpreter: '$HOME/.deno/bin/deno',
+              env: {
+                NODE_ENV: 'production'
+              }
+            }]
+          }
+          EOL
+          scp -i ~/.ssh/id_rsa ecosystem.config.js "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/app/"
+
       - name: Deploy to Server # 部署到服务器
         run: |
           # 确保目录存在
@@ -65,7 +81,7 @@ jobs:
             fi
           "
 
-          # 使用 pm2 停止旧进程并启动新进程
+          # 使用 PM2 配置文件启动
           ssh -i ~/.ssh/id_rsa "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "
             cd ~/app && \
             export DENO_INSTALL=\"\$HOME/.deno\" && \
@@ -74,7 +90,7 @@ jobs:
               pm2 stop trend-finder
               pm2 delete trend-finder
             fi && \
-            pm2 start --name trend-finder 'deno task start' --interpreter \$HOME/.deno/bin/deno
+            pm2 start ecosystem.config.js
           "
           
       - name: Verify Deployment # 验证部署
