@@ -2,7 +2,7 @@ import * as cheerio from "npm:cheerio";
 import {
   AIGithubItem,
   AIGithubItemDetail,
-} from "@src/modules/render/interfaces/aigithub.type.ts";
+} from "@src/modules/render/weixin/interfaces/aigithub.type.ts";
 
 export class HelloGithubScraper {
   private static readonly BASE_URL = "https://hellogithub.com";

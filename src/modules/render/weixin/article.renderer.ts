@@ -1,8 +1,8 @@
-import { BaseTemplateRenderer } from "@src/modules/render/base.renderer.ts";
-import { WeixinTemplate } from "@src/modules/render/interfaces/article.type.ts";
+import { WeixinTemplate } from "@src/modules/render/weixin/interfaces/article.type.ts";
 import ejs from "npm:ejs";
 import { WeixinImageProcessor } from "@src/utils/image/image-processor.ts";
 import { WeixinPublisher } from "@src/modules/publishers/weixin.publisher.ts";
+import { BaseTemplateRenderer } from "@src/modules/render/weixin/base.renderer.ts";
 
 /**
  * 文章模板渲染器
@@ -69,15 +69,17 @@ export class WeixinArticleTemplateRenderer
    */
   protected async loadTemplates(): Promise<void> {
     this.templates = {
-      default: await this.getTemplateContent("/templates/article/article.ejs"),
+      default: await this.getTemplateContent(
+        "/templates/article.ejs",
+      ),
       modern: await this.getTemplateContent(
-        "/templates/article/article.modern.ejs",
+        "/templates/article.modern.ejs",
       ),
       tech: await this.getTemplateContent(
-        "/templates/article/article.tech.ejs",
+        "/templates/article.tech.ejs",
       ),
       mianpro: await this.getTemplateContent(
-        "/templates/article/article.mianpro.ejs",
+        "/templates/article.mianpro.ejs",
       ),
     };
   }

@@ -8,12 +8,12 @@ import {
 import { ContentSummarizer } from "@src/modules/interfaces/summarizer.interface.ts";
 import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
 import { WeixinPublisher } from "@src/modules/publishers/weixin.publisher.ts";
-import { WeixinTemplate } from "@src/modules/render/interfaces/article.type.ts";
+import { WeixinTemplate } from "../modules/render/weixin/interfaces/article.type.ts";
 import { FireCrawlScraper } from "@src/modules/scrapers/fireCrawl.scraper.ts";
 import { TwitterScraper } from "@src/modules/scrapers/twitter.scraper.ts";
 import { AISummarizer } from "@src/modules/summarizer/ai.summarizer.ts";
 import { ImageGeneratorFactory } from "@src/providers/image-gen/image-generator-factory.ts";
-import { WeixinArticleTemplateRenderer } from "@src/modules/render/article.renderer.ts";
+import { WeixinArticleTemplateRenderer } from "../modules/render/weixin/article.renderer.ts";
 import { ConfigManager } from "@src/utils/config/config-manager.ts";
 import {
   WorkflowEntrypoint,

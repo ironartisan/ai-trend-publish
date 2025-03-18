@@ -44,6 +44,7 @@ export abstract class BaseTemplateRenderer<T extends ejs.Data> {
     // 1. 首先尝试从exe内部资源加载
     try {
       // 使用 Deno.stat 检查资源是否存在
+      logger.info("import.meta.dirname", import.meta.dirname);
       const stat = await Deno.stat(import.meta.dirname + templatePath);
       if (stat.isFile) {
         const bundledTemplate = await Deno.readFile(

@@ -1,6 +1,5 @@
-import path from "node:path";
-import { BaseTemplateRenderer } from "@src/modules/render/base.renderer.ts";
-import { AIGithubItemDetail } from "@src/modules/render/interfaces/aigithub.type.ts";
+import { BaseTemplateRenderer } from "@src/modules/render/weixin/base.renderer.ts";
+import { AIGithubItemDetail } from "@src/modules/render/weixin/interfaces/aigithub.type.ts";
 import ejs from "npm:ejs";
 
 /**
@@ -18,7 +17,9 @@ export class HelloGithubTemplateRenderer
    */
   protected async loadTemplates(): Promise<void> {
     this.templates = {
-      default: await this.getTemplateContent("/templates/hellogithub.ejs"),
+      default: await this.getTemplateContent(
+        "/templates/hellogithub.ejs",
+      ),
     };
   }
 

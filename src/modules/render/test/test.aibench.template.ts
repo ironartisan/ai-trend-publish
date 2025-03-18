@@ -1,7 +1,7 @@
 import { ModelPerformance } from "@src/api/livebench.api.ts";
 import fs from "fs";
 import path from "path";
-import { AIBenchTemplateRenderer } from "@src/modules/render/aibench.renderer.ts";
+import { AIBenchTemplateRenderer } from "@src/modules/render/weixin/aibench.renderer.ts";
 
 // 示例数据
 const modelData = {

@@ -4,7 +4,7 @@ import { WeixinPublisher } from "@src/modules/publishers/weixin.publisher.ts";
 import {
   CategoryData,
   ModelScore,
-} from "@src/modules/render/interfaces/aibench.type.ts";
+} from "@src/modules/render/weixin/interfaces/aibench.type.ts";
 import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
 import { ImageGeneratorFactory } from "@src/providers/image-gen/image-generator-factory.ts";
 import {

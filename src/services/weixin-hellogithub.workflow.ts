@@ -2,7 +2,7 @@ import { AliWanX21ImageGenerator } from "@src/providers/image-gen/aliyun/aliwanx
 import { HelloGithubScraper } from "@src/modules/scrapers/hellogithub.scraper.ts";
 import { WeixinPublisher } from "@src/modules/publishers/weixin.publisher.ts";
 import { ImageGeneratorFactory } from "@src/providers/image-gen/image-generator-factory.ts";
-import { HelloGithubTemplateRenderer } from "@src/modules/render/hellogithub.renderer.ts";
+import { HelloGithubTemplateRenderer } from "@src/modules/render/weixin/hellogithub.renderer.ts";
 import {
   WorkflowEntrypoint,
   WorkflowEnv,

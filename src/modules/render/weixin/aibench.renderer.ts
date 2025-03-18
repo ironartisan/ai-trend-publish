@@ -1,12 +1,10 @@
-import path from "node:path";
-import fs from "node:fs";
-import { BaseTemplateRenderer } from "@src/modules/render/base.renderer.ts";
+import { BaseTemplateRenderer } from "@src/modules/render/weixin/base.renderer.ts";
 import { ModelPerformance } from "@src/api/livebench.api.ts";
 import {
   AIBenchTemplate,
   CategoryData,
   ModelScore,
-} from "@src/modules/render/interfaces/aibench.type.ts";
+} from "@src/modules/render/weixin/interfaces/aibench.type.ts";
 import ejs from "npm:ejs";
 
 /**
