@@ -42,7 +42,7 @@ export class WeixinArticleWorkflow
   extends WorkflowEntrypoint<WeixinWorkflowEnv, WeixinWorkflowParams> {
   private scraper: Map<string, ContentScraper>;
   private summarizer: ContentSummarizer;
-  private publisher: ContentPublisher;
+  private publisher: WeixinPublisher;
   private notifier: BarkNotifier;
   private renderer: WeixinArticleTemplateRenderer;
   private contentRanker: ContentRanker;
@@ -76,6 +76,24 @@ export class WeixinArticleWorkflow
       logger.info(
         `[工作流开始] 开始执行微信工作流, 当前工作流实例ID: ${this.env.id} 触发事件ID: ${event.id}`,
       );
+
+      // 验证IP白名单
+      await step.do("validate-ip-whitelist", {
+        retries: { limit: 3, delay: "10 second", backoff: "exponential" },
+        timeout: "10 minutes",
+      }, async () => {
+        const isWhitelisted = await this.publisher.validateIpWhitelist();
+        if (typeof isWhitelisted === "string") {
+          this.notifier.warning(
+            "IP白名单验证失败",
+            `当前服务器IP(${isWhitelisted})不在微信公众号IP白名单中，请在微信公众平台添加此IP地址`,
+          );
+          throw new WorkflowTerminateError(
+            `当前服务器IP(${isWhitelisted})不在微信公众号IP白名单中，请在微信公众平台添加此IP地址`,
+          );
+        }
+        return isWhitelisted;
+      });
       await this.notifier.info("工作流开始", "开始执行内容抓取和处理");
 
       // 获取数据源
