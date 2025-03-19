@@ -12,7 +12,7 @@ import {
 import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
 import { Logger } from "@zilla/logger";
 import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
-
+import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
 const logger = new Logger("weixin-hellogithub-workflow");
 
 interface WeixinHelloGithubWorkflowEnv {
@@ -41,6 +41,10 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
     this.imageGenerator = new AliWanX21ImageGenerator();
     this.renderer = new HelloGithubTemplateRenderer();
     this.notify = new BarkNotifier();
+  }
+
+  public getWorkflowStats(eventId: string) {
+    return this.metricsCollector.getWorkflowEventMetrics(this.env.id, eventId);
   }
 
   /**
@@ -99,18 +103,19 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
         timeout: "5 minutes",
       }, async () => {
         logger.info("[封面生成] 开始生成封面图片");
-        const prompt =
-          "GitHub AI 开源项目精选，展示代码和人工智能的融合，使用现代科技风格，蓝色和绿色为主色调";
+        const firstItem = items[0];
         const imageGenerator = await ImageGeneratorFactory.getInstance()
-          .getGenerator("ALIWANX21");
+          .getGenerator(ImageGeneratorType.PDD920_LOGO);
         const url = await imageGenerator.generate({
-          prompt,
-          size: "1440*768",
+          t: "AI开源项目精选",
+          text:
+            `本期精选 GitHub 热门${firstItem.name}，发现最新最酷的人工智能开源工具`,
+          type: "json",
         });
 
         // 上传封面图片获取 mediaId
         logger.info("[封面上传] 开始上传封面图片");
-        const media = await this.publisher.uploadImage(url);
+        const media = await this.publisher.uploadImage(url as string);
         return { imageUrl: url, mediaId: media };
       });
 

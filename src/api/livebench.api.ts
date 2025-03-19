@@ -2,6 +2,9 @@ import axios from "npm:axios";
 import { LLMFactory } from "@src/providers/llm/llm-factory.ts";
 import { LLMProvider } from "@src/providers/interfaces/llm.interface.ts";
 import { RetryUtil } from "@src/utils/retry.util.ts";
+import { Logger } from "@zilla/logger";
+
+const logger = new Logger("livebench.api");
 
 interface CategoryMapping {
   [key: string]: string[];
@@ -108,28 +111,41 @@ export class LiveBenchAPI {
       const modelScores: ModelScores = {};
 
       const totalRows = rows.length - 1;
-      for (let i = 1; i < rows.length; i++) {
-        const values = rows[i].split(",");
-        const modelName = values[0];
-        const scores: ModelScore = {};
+      // 并行处理所有模型，但控制并发数量
+      const concurrencyLimit = 10; // 同时最多处理5个模型
+      const allRows = rows.slice(1);
 
-        for (let j = 1; j < headers.length; j++) {
-          const metric = headers[j];
-          const score = parseFloat(values[j]);
-          if (!isNaN(score)) {
-            scores[metric] = score;
-          }
-        }
+      // 分批处理数据
+      for (let i = 0; i < allRows.length; i += concurrencyLimit) {
+        const batch = allRows.slice(i, i + concurrencyLimit);
+        await Promise.all(
+          batch.map(async (row: string, batchIndex: number) => {
+            const index = i + batchIndex;
+            const values = row.split(",");
+            const modelName = values[0];
+            const scores: ModelScore = {};
 
-        const organization = await this.getModelOrganization(modelName);
-        modelScores[modelName] = {
-          scores,
-          organization,
-        };
+            for (let j = 1; j < headers.length; j++) {
+              const metric = headers[j];
+              const score = parseFloat(values[j]);
+              if (!isNaN(score)) {
+                scores[metric] = score;
+              }
+            }
 
-        // 显示进度
-        const progress = ((i / totalRows) * 100).toFixed(1);
-        console.log(`Processing models: ${progress}% (${i}/${totalRows})`);
+            const organization = await this.getModelOrganization(modelName);
+            modelScores[modelName] = {
+              scores,
+              organization,
+            };
+
+            // 显示进度
+            const progress = (((index + 1) / totalRows) * 100).toFixed(1);
+            logger.info(
+              `Processing models: ${progress}% (${index + 1}/${totalRows})`,
+            );
+          }),
+        );
       }
 
       return modelScores;
@@ -184,8 +200,6 @@ export class LiveBenchAPI {
     try {
       await this.fetchCategories();
       const modelScores = await this.fetchScores();
-
-      console.log("Fetched modelScores:", modelScores);
       const result: { [key: string]: ModelPerformance } = {};
 
       if (modelName) {
@@ -208,7 +222,7 @@ export class LiveBenchAPI {
 
       return result;
     } catch (error) {
-      console.error("Error in getModelPerformance:", error);
+      logger.error("Error in getModelPerformance:", error);
       throw error;
     }
   }

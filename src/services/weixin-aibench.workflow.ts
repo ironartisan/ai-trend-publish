@@ -15,6 +15,7 @@ import {
 } from "@src/works/workflow.ts";
 import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
 import { Logger } from "@zilla/logger";
+import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
 
 const logger = new Logger("weixin-aibench-workflow");
 
@@ -43,10 +44,14 @@ export class WeixinAIBenchWorkflow extends WorkflowEntrypoint<
     this.publisher = new WeixinPublisher();
   }
 
+  public getWorkflowStats(eventId: string) {
+    return this.metricsCollector.getWorkflowEventMetrics(this.env.id, eventId);
+  }
+
   async generateCoverImage(title: string): Promise<string> {
     // 生成封面图并获取URL
     const imageGenerator = await ImageGeneratorFactory.getInstance()
-      .getGenerator("PDD920_LOGO");
+      .getGenerator(ImageGeneratorType.PDD920_LOGO);
     const imageResult = await imageGenerator.generate({
       t: "@AISPACE科技空间",
       text: title,
@@ -79,7 +84,9 @@ export class WeixinAIBenchWorkflow extends WorkflowEntrypoint<
         return data;
       });
 
-      logger.debug("[数据获取] 模型性能数据", modelData);
+      // 打印前5个模型性能数据
+      const head5Models = Object.entries(modelData).slice(0, 5);
+      logger.debug("[数据获取] 前5个模型性能数据:", head5Models);
 
       // 2. 找出性能最好的模型
       const topModel = await step.do("analyze-top-model", async () => {

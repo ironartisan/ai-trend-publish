@@ -10,35 +10,69 @@ import { Logger, LogLevel } from "@zilla/logger";
 const logger = new Logger("test");
 Logger.level = LogLevel.DEBUG;
 
+const test_workflows = [
+  WeixinAIBenchWorkflow,
+  WeixinArticleWorkflow,
+  WeixinHelloGithubWorkflow,
+];
+
+const selected_workflow = test_workflows[1];
+
 async function bootstrap() {
   const configManager = ConfigManager.getInstance();
   await configManager.initDefaultConfigSources();
 
-  const weixinWorkflow = new WeixinArticleWorkflow({
-    id: "test-workflow",
-    env: {
-      name: "test-workflow",
-    },
-  });
+  if (selected_workflow === WeixinAIBenchWorkflow) {
+    const weixinWorkflow = new selected_workflow({
+      id: "test-workflow",
+      env: {
+        name: "test-workflow",
+      },
+    });
 
-  await weixinWorkflow.execute({
-    payload: {
-      sourceType: "all",
-      maxArticles: 10,
-      forcePublish: true,
-    },
-    id: "manual-action",
-    timestamp: Date.now(),
-  });
+    await weixinWorkflow.execute({
+      payload: {
+        forcePublish: true,
+      },
+      id: "manual-action",
+      timestamp: Date.now(),
+    });
 
-  const stats = weixinWorkflow.getWorkflowStats("manual-action");
-  logger.debug("Workflow stats:", stats);
+    const stats = weixinWorkflow.getWorkflowStats("manual-action");
+    logger.debug("Workflow stats:", stats);
+  } else if (selected_workflow === WeixinArticleWorkflow) {
+    const weixinWorkflow = new selected_workflow({
+      id: "test-workflow",
+      env: {
+        name: "test-workflow",
+      },
+    });
 
-  // const weixinAIBenchWorkflow = new WeixinAIBenchWorkflow();
-  // await weixinAIBenchWorkflow.process();
+    await weixinWorkflow.execute({
+      payload: {},
+      id: "manual-action",
+      timestamp: Date.now(),
+    });
 
-  // const weixinHelloGithubWorkflow = new WeixinHelloGithubWorkflow();
-  // await weixinHelloGithubWorkflow.process();
+    const stats = weixinWorkflow.getWorkflowStats("manual-action");
+    logger.debug("Workflow stats:", stats);
+  } else if (selected_workflow === WeixinHelloGithubWorkflow) {
+    const weixinWorkflow = new selected_workflow({
+      id: "test-workflow",
+      env: {
+        name: "test-workflow",
+      },
+    });
+
+    await weixinWorkflow.execute({
+      payload: {},
+      id: "manual-action",
+      timestamp: Date.now(),
+    });
+
+    const stats = weixinWorkflow.getWorkflowStats("manual-action");
+    logger.debug("Workflow stats:", stats);
+  }
 }
 
 bootstrap().catch(console.error);

@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { WeixinTemplate } from "@src/modules/render/weixin/interfaces/article.type.ts";
 import { formatDate } from "@src/utils/common.ts";
@@ -37,7 +37,8 @@ const previewArticles: WeixinTemplate[] = [
     }],
     metadata: {
       author: "AI研究员",
-      readTime: "5分钟",
+      readTime: 5,
+      wordCount: 1000,
     },
   },
   {
@@ -67,7 +68,8 @@ const previewArticles: WeixinTemplate[] = [
     }],
     metadata: {
       author: "AI研究员",
-      readTime: "5分钟",
+      readTime: 5,
+      wordCount: 1000,
     },
   },
   {
@@ -81,7 +83,8 @@ const previewArticles: WeixinTemplate[] = [
     keywords: ["GPT-4", "人工智能", "多模态", "OpenAI"],
     metadata: {
       author: "AI研究员",
-      readTime: "5分钟",
+      readTime: 5,
+      wordCount: 1000,
     },
   },
 ];
@@ -92,13 +95,16 @@ async function renderAndSavePreview() {
   configManager.initDefaultConfigSources();
   const weixinPublisher = new WeixinPublisher();
   const renderer = new WeixinArticleTemplateRenderer();
+
+  await renderer.initializeTemplates();
   const imageProcessor = new WeixinImageProcessor(weixinPublisher);
-  const html = await renderer.render(previewArticles, "default");
+
+  const html = await renderer.render(previewArticles, "modern");
 
   // 确保temp目录存在
-  const tempDir = path.join(__dirname, "../../../temp");
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
+  const tempDir = join(import.meta.dirname as string, "../../../../temp");
+  if (!existsSync(tempDir)) {
+    mkdirSync(tempDir, { recursive: true });
   }
 
   // //上传到微信草稿箱
@@ -124,9 +130,11 @@ async function renderAndSavePreview() {
   // });
 
   // 保存渲染结果
-  const outputPath = path.join(tempDir, "preview_weixin.html");
-  fs.writeFileSync(outputPath, html, "utf-8");
+  const outputPath = join(tempDir, "preview_weixin.html");
+  writeFileSync(outputPath, html, "utf-8");
   console.log(`预览文件已生成：${outputPath}`);
 }
 
-renderAndSavePreview();
+Deno.test("test", async () => {
+  await renderAndSavePreview();
+});

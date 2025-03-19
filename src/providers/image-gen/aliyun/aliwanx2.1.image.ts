@@ -29,7 +29,6 @@ export class AliWanX21ImageGenerator extends BaseAliyunImageGenerator {
       const response = await this.submitTask<AliTaskResponse>({
         input: {
           prompt,
-          size,
         },
         parameters: {
           size,

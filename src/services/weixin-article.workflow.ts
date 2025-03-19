@@ -24,7 +24,7 @@ import {
 import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
 import { Logger } from "@zilla/logger";
 import ProgressBar from "jsr:@deno-library/progress";
-
+import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
 const logger = new Logger("weixin-article-workflow");
 
 interface WeixinWorkflowEnv {
@@ -281,7 +281,7 @@ export class WeixinArticleWorkflow
 
           // 生成封面图片
           const imageGenerator = await ImageGeneratorFactory.getInstance()
-            .getGenerator("ALIWANX_POSTER");
+            .getGenerator(ImageGeneratorType.ALIWANX_POSTER);
           const imageUrl = await imageGenerator.generate({
             title: title.split(" | ")[1].trim().slice(0, 30),
             sub_title: new Date().toLocaleDateString() + " AI速递",

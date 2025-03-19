@@ -31,20 +31,23 @@ export interface ImageGenerator {
 /**
  * 图片生成器类型
  */
-export type ImageGeneratorType =
-  | "TEXT_LOGO"
-  | "PDD920_LOGO"
-  | "ALIWANX21"
-  | "ALIWANX_POSTER";
+export enum ImageGeneratorType {
+  TEXT_LOGO = "TEXT_LOGO",
+  PDD920_LOGO = "PDD920_LOGO",
+  ALIWANX21 = "ALIWANX21",
+  ALIWANX_POSTER = "ALIWANX_POSTER",
+}
 
 /**
  * 图片生成器类型映射
  */
 export interface ImageGeneratorTypeMap {
-  "TEXT_LOGO": import("../image-gen/text-logo.ts").TextLogoGenerator;
-  "PDD920_LOGO": import("../image-gen/pdd920-logo.ts").PDD920LogoGenerator;
-  "ALIWANX21":
-    import("../image-gen/aliyun/aliwanx2.1.image.ts").AliWanX21ImageGenerator;
-  "ALIWANX_POSTER":
-    import("../image-gen/aliyun/aliwanx-poster.image-generator.ts").AliyunWanxPosterGenerator;
+  [ImageGeneratorType.TEXT_LOGO]:
+    import("@src/providers/image-gen/text-logo.ts").TextLogoGenerator;
+  [ImageGeneratorType.PDD920_LOGO]:
+    import("@src/providers/image-gen/pdd920-logo.ts").PDD920LogoGenerator;
+  [ImageGeneratorType.ALIWANX21]:
+    import("@src/providers/image-gen/aliyun/aliwanx2.1.image.ts").AliWanX21ImageGenerator;
+  [ImageGeneratorType.ALIWANX_POSTER]:
+    import("@src/providers/image-gen/aliyun/aliwanx-poster.image-generator.ts").AliyunWanxPosterGenerator;
 }

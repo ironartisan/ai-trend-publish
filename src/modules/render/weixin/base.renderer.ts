@@ -24,7 +24,7 @@ export abstract class BaseTemplateRenderer<T extends ejs.Data> {
   /**
    * 初始化并加载模板
    */
-  private async initializeTemplates(): Promise<void> {
+  public async initializeTemplates(): Promise<void> {
     try {
       await this.loadTemplates();
     } catch (error) {

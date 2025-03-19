@@ -62,7 +62,6 @@ export class HelloGithubScraper {
 
       // 提取 GitHub 仓库链接
       const githubUrl = repoData.url;
-      console.log("GitHub URL:", githubUrl);
 
       // 提取其他链接
       if (repoData.homepage && repoData.homepage !== githubUrl) {
