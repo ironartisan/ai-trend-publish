@@ -13,6 +13,9 @@ import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
 import { Logger } from "@zilla/logger";
 import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
 import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
+import { LLMFactory } from "@src/providers/llm/llm-factory.ts";
+import { ConfigManager } from "@src/utils/config/config-manager.ts";
+import { runConcurrentTasks } from "@src/utils/concurrency/concurrency-limiter.ts";
 const logger = new Logger("weixin-hellogithub-workflow");
 
 interface WeixinHelloGithubWorkflowEnv {
@@ -91,6 +94,64 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
             return await this.scraper.getItemDetail(item.itemId);
           }),
         );
+        const LLMProvider = await LLMFactory.getInstance().getLLMProvider(
+          await ConfigManager.getInstance().get(
+            "AI_SUMMARIZER_LLM_PROVIDER",
+          ),
+        );
+
+        // 对每个项目的描述进行润色
+        logger.info("[内容润色] 开始对项目描述进行润色");
+
+        // 创建润色任务列表
+        const enhanceTasks = details.map((item) => async () => {
+          try {
+            if (item && item.description) {
+              logger.debug(`[内容润色] 润色项目: ${item.name}`);
+              const enhancedDescription = await LLMProvider
+                .createChatCompletion([
+                  {
+                    role: "system",
+                    content:
+                      "你是一位技术文案专家，擅长将开源项目描述润色得更加生动、专业且吸引人，同时保持技术准确性。",
+                  },
+                  {
+                    role: "user",
+                    content:
+                      `请对以下GitHub项目描述进行润色，使其更加生动、专业且吸引人，保持在200字以内：\n${item.description}`,
+                  },
+                ]);
+
+              // 更新项目描述
+              logger.debug(
+                `[内容润色] 润色项目: ${item.name} 润色结果: ${
+                  enhancedDescription.choices[0]?.message?.content
+                }`,
+              );
+              item.description = enhancedDescription.choices[0]?.message
+                ?.content;
+            }
+            return item;
+          } catch (error) {
+            logger.warn(
+              `[内容润色] 项目 ${item.name} 润色失败: `,
+              error,
+            );
+            // 润色失败时保留原始描述
+            return item;
+          }
+        });
+
+        // 使用并发控制器执行润色任务，限制最大并发为3
+        const enhancedDetails = await runConcurrentTasks(enhanceTasks, {
+          maxConcurrent: 20,
+          timeout: 30000, // 30秒超时
+        });
+
+        logger.info(
+          `[内容润色] 完成对 ${enhancedDetails.length} 个项目描述的润色`,
+        );
+
         if (details.length === 0) {
           throw new WorkflowTerminateError("未获取到任何项目详情");
         }
@@ -98,7 +159,7 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
       });
 
       // 3. 生成封面图片
-      const { imageUrl, mediaId } = await step.do("generate-cover", {
+      const mediaId = await step.do("generate-cover", {
         retries: { limit: 2, delay: "5 second", backoff: "exponential" },
         timeout: "5 minutes",
       }, async () => {
@@ -115,7 +176,7 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
         // 上传封面图片获取 mediaId
         logger.info("[封面上传] 开始上传封面图片");
         const media = await this.publisher.uploadImage(url as string);
-        return { imageUrl: url, mediaId: media };
+        return media;
       });
 
       // 4. 渲染内容

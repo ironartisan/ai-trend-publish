@@ -357,21 +357,21 @@ git clone https://github.com/OpenAISpace/ai-trend-publish.git
 
 ```bash
 # 构建镜像
-docker build -t ai-trend-publsih .
+docker build -t ai-trend-publish .
 ```
 
 4. 运行容器：
 
 ```bash
 # 方式1：通过环境变量文件运行
-docker run -d --env-file .env --name ai-trend-publsih-container ai-trend-publsih
+docker run -d --env-file .env --name ai-trend-publish-container ai-trend-publish
 
 # 方式2：直接指定环境变量运行
 docker run -d \
   -e XXXX=XXXX \
   ...其他环境变量... \
-  --name ai-trend-publsih-container \
-  ai-trend-publsih
+  --name ai-trend-publish-container \
+  ai-trend-publish
 ```
 
 ### CI/CD 自动部署
