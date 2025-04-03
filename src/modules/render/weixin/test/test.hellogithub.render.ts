@@ -1,6 +1,6 @@
-import ejs from "ejs";
-import fs from "fs";
-import path from "path";
+import ejs from "npm:ejs";
+import fs from "npm:fs";
+import path from "npm:path";
 import { HelloGithubScraper } from "@src/modules/scrapers/hellogithub.scraper.ts";
 
 interface RenderOptions {

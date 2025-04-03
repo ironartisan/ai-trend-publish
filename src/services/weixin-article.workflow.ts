@@ -25,6 +25,11 @@ import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
 import { Logger } from "@zilla/logger";
 import ProgressBar from "jsr:@deno-library/progress";
 import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
+import { VectorService } from "@src/services/vector-service.ts";
+import { EmbeddingProvider } from "@src/providers/interfaces/embedding.interface.ts";
+import { EmbeddingFactory } from "@src/providers/embedding/embedding-factory.ts";
+import { EmbeddingProviderType } from "@src/providers/interfaces/embedding.interface.ts";
+import { VectorSimilarityUtil } from "@src/utils/VectorSimilarityUtil.ts";
 const logger = new Logger("weixin-article-workflow");
 
 interface WeixinWorkflowEnv {
@@ -46,10 +51,14 @@ export class WeixinArticleWorkflow
   private notifier: BarkNotifier;
   private renderer: WeixinArticleTemplateRenderer;
   private contentRanker: ContentRanker;
+  private vectorService: VectorService;
+  private embeddingModel!: EmbeddingProvider;
+  private existingVectors: { vector: number[]; content: string | null }[] = [];
   private stats = {
     success: 0,
     failed: 0,
     contents: 0,
+    duplicates: 0,
   };
 
   constructor(env: WorkflowEnv<WeixinWorkflowEnv>) {
@@ -62,6 +71,7 @@ export class WeixinArticleWorkflow
     this.notifier = new BarkNotifier();
     this.renderer = new WeixinArticleTemplateRenderer();
     this.contentRanker = new ContentRanker();
+    this.vectorService = new VectorService();
   }
 
   public getWorkflowStats(eventId: string) {
@@ -182,34 +192,131 @@ export class WeixinArticleWorkflow
         return contents;
       });
 
-      // 4. 内容排序
+      // 4. 内容去重
+      const uniqueContents = await step.do("dedup-contents", {
+        retries: { limit: 2, delay: "5 second", backoff: "exponential" },
+        timeout: "15 minutes",
+      }, async () => {
+        // 初始化 embedding 模型
+        this.embeddingModel = await EmbeddingFactory.getInstance().getProvider({
+          providerType: EmbeddingProviderType.DASHSCOPE,
+          model: "text-embedding-v3",
+        });
+
+        // 获取所有已存在的向量
+        const existingVectors = await this.vectorService.getByType("article");
+        this.existingVectors = existingVectors.map((v) => ({
+          vector: v.vector,
+          content: v.content,
+        }));
+
+        // 预先计算所有内容的embedding
+        const contentEmbeddings = new Map<string, number[]>();
+        const newVectors: {
+          content: string;
+          vector: number[];
+          vectorDim: number;
+          vectorType: string;
+        }[] = [];
+
+        logger.info("[向量计算] 开始批量计算内容向量");
+        const embedProgress = new ProgressBar({
+          title: "向量计算进度",
+          total: allContents.length,
+          clear: true,
+          display: ":title | :percent | :completed/:total | :time \n",
+        });
+        let embedCompleted = 0;
+
+        // 并行计算所有内容的embedding
+        await Promise.all(
+          allContents.map(async (content) => {
+            try {
+              const embedding = await this.embeddingModel.createEmbedding(
+                content.content,
+              );
+              contentEmbeddings.set(content.id, embedding.embedding);
+              newVectors.push({
+                content: content.content,
+                vector: embedding.embedding,
+                vectorDim: embedding.embedding.length,
+                vectorType: "article",
+              });
+            } catch (error) {
+              logger.error(
+                `[向量计算] 计算内容 ${content.id} 的向量失败:`,
+                error,
+              );
+            }
+            await embedProgress.render(++embedCompleted);
+          }),
+        );
+
+        logger.info(
+          `[向量计算] 完成 ${contentEmbeddings.size} 个内容的向量计算`,
+        );
+
+        // 过滤掉重复内容
+        const deduplicatedContents: ScrapedContent[] = [];
+
+        for (const content of allContents) {
+          const contentVector = contentEmbeddings.get(content.id);
+          if (!contentVector) continue;
+
+          // 检查是否与已处理的内容重复
+          const isDuplicate = await this.checkDuplicateWithVector(
+            content,
+            contentVector,
+          );
+
+          if (!isDuplicate) {
+            deduplicatedContents.push(content);
+          }
+        }
+
+        // 批量保存新的向量到数据库
+        if (newVectors.length > 0) {
+          logger.info(`[向量存储] 开始批量保存 ${newVectors.length} 个新向量`);
+          await this.vectorService.createBatch(newVectors);
+          logger.info("[向量存储] 向量保存完成");
+        }
+
+        logger.info(
+          `[去重] 完成内容去重，原始内容 ${allContents.length} 篇，去重后 ${deduplicatedContents.length} 篇，重复 ${this.stats.duplicates} 篇`,
+        );
+
+        return deduplicatedContents;
+      });
+
+      // 5. 内容排序
       const rankedContents = await step.do("rank-contents", {
         retries: { limit: 2, delay: "5 second", backoff: "exponential" },
         timeout: "5 minutes",
       }, async () => {
-        logger.info(`[内容排序] 开始排序 ${allContents.length} 条内容`);
-        const ranked = await this.contentRanker.rankContents(allContents);
+        logger.info(`[内容排序] 开始排序 ${uniqueContents.length} 条内容`);
+        const ranked = await this.contentRanker.rankContents(uniqueContents);
         if (ranked.length === 0) {
           throw new WorkflowTerminateError("内容排序失败，没有任何内容被评分");
         }
-        // 先按分数排序
+        // 按分数排序
         ranked.sort((a, b) => b.score - a.score);
         logger.info("[内容排序] 内容排序完成");
         return ranked;
       });
 
-      // 5. 处理排序后的内容
+      // 6. 处理排序后的内容
       const processedContents = await step.do("process-contents", {
         retries: { limit: 2, delay: "5 second", backoff: "exponential" },
         timeout: "15 minutes",
       }, async () => {
-        // 根据排名顺序获取对应的文章内容
-        const topContents: ScrapedContent[] = [];
         const maxArticles = event.payload.maxArticles ||
-          await ConfigManager.getInstance().get("ARTICLE_NUM");
+          await ConfigManager.getInstance().get("ARTICLE_NUM") || 10;
+
+        // 取前maxArticles篇文章
+        const topContents: ScrapedContent[] = [];
 
         for (const ranked of rankedContents.slice(0, maxArticles)) {
-          const content = allContents.find((c) => c.id === ranked.id);
+          const content = uniqueContents.find((c) => c.id === ranked.id);
           if (content) {
             content.metadata.score = ranked.score;
             content.metadata.wordCount = content.content.length;
@@ -220,12 +327,23 @@ export class WeixinArticleWorkflow
           }
         }
 
+        // 如果文章数量不足，记录警告
+        if (topContents.length < maxArticles) {
+          logger.warn(
+            `[内容处理] 文章数量不足，期望 ${maxArticles} 篇，实际 ${topContents.length} 篇`,
+          );
+          await this.notifier.warning(
+            "内容数量不足",
+            `仅获取到 ${topContents.length} 篇文章，少于预期的 ${maxArticles} 篇`,
+          );
+        }
+
         logger.debug(
-          "[内容处理] 取出的文章（润色前）：",
+          "[内容处理] 开始处理文章",
           JSON.stringify(topContents, null, 2),
         );
 
-        // 创建内容处理进度条
+        // 处理内容（润色等）
         const processProgress = new ProgressBar({
           title: "内容处理进度",
           total: topContents.length,
@@ -234,22 +352,17 @@ export class WeixinArticleWorkflow
         });
         let processCompleted = 0;
 
-        // 并发处理所有内容
-        await Promise.all(topContents.map(async (content, _) => {
+        await Promise.all(topContents.map(async (content) => {
           await this.processContent(content);
           await processProgress.render(++processCompleted, {
             title: `已处理: ${content.title?.slice(0, 5) || "无标题"}...`,
           });
         }));
 
-        logger.debug(
-          "[内容处理] 处理后的内容",
-          JSON.stringify(topContents, null, 2),
-        );
         return topContents;
       });
 
-      // 6. 生成文章
+      // 7. 生成文章
       const { summaryTitle, mediaId, renderedTemplate } = await step.do(
         "generate-article",
         {
@@ -306,7 +419,7 @@ export class WeixinArticleWorkflow
         },
       );
 
-      // 7. 发布文章
+      // 8. 发布文章
       await step.do("publish-article", {
         retries: { limit: 3, delay: "10 second", backoff: "exponential" },
         timeout: "5 minutes",
@@ -320,13 +433,14 @@ export class WeixinArticleWorkflow
         );
       });
 
-      // 8. 完成报告
+      // 9. 完成报告
       const summary = `
         工作流执行完成
         - 数据源: ${totalSources} 个
         - 成功: ${this.stats.success} 个
         - 失败: ${this.stats.failed} 个
         - 内容: ${this.stats.contents} 条
+        - 重复: ${this.stats.duplicates} 条
         - 发布: 成功`.trim();
 
       logger.info(`[工作流完成] ${summary}`);
@@ -389,6 +503,37 @@ export class WeixinArticleWorkflow
       content.title = content.title || "无标题";
       content.content = content.content || "内容处理失败";
       content.metadata.keywords = content.metadata.keywords || [];
+    }
+  }
+
+  private async checkDuplicateWithVector(
+    content: ScrapedContent,
+    contentVector: number[],
+  ): Promise<boolean> {
+    try {
+      // 在内存中计算相似度
+      for (const existingVector of this.existingVectors) {
+        if (!existingVector.vector || !contentVector) {
+          continue;
+        }
+        const similarity = VectorSimilarityUtil.cosineSimilarity(
+          contentVector,
+          existingVector.vector,
+        );
+        if (similarity >= 0.85) {
+          logger.info(
+            `[去重] 发现重复内容: ${content.id}, 相似度: ${similarity}, 原内容: ${
+              existingVector.content?.slice(0, 50)
+            }...`,
+          );
+          this.stats.duplicates++;
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      logger.error(`[去重] 检查重复失败: ${error}`);
+      return false;
     }
   }
 }

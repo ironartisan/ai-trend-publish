@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { config, dataSources } from "@src/db/schema.ts";
+import { config, dataSources, vectorItems } from "@src/db/schema.ts";
 import { Logger } from "@zilla/logger";
 import process from "node:process";
 import dotenv from "npm:dotenv";
@@ -33,6 +33,7 @@ const db = drizzle(poolConnection, {
   schema: {
     config: config,
     dataSources: dataSources,
+    vectorItems
   },
 });
 

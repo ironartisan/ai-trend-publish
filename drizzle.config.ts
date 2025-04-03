@@ -5,6 +5,10 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   dialect: "mysql",
   dbCredentials: {
-    url: Deno.env.get("DATABASE_URL")!,
+    host: Deno.env.get("DB_HOST")!,
+    port: Number(Deno.env.get("DB_PORT")),
+    user: Deno.env.get("DB_USER")!,
+    password: Deno.env.get("DB_PASSWORD")!,
+    database: Deno.env.get("DB_DATABASE")!
   },
 });

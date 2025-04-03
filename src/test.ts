@@ -16,7 +16,7 @@ const test_workflows = [
   WeixinHelloGithubWorkflow,
 ];
 
-const selected_workflow = test_workflows[2];
+const selected_workflow = test_workflows[1];
 
 async function bootstrap() {
   const configManager = ConfigManager.getInstance();

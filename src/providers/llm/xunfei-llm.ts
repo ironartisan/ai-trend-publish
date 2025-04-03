@@ -48,6 +48,10 @@ export class XunfeiLLM implements LLMProvider {
     await this.refresh();
   }
 
+  async setModel(model: string): Promise<void> {
+    this.defaultModel = model
+  }
+
   async refresh(): Promise<void> {
     this.token = await this.configManager.get("XUNFEI_API_KEY");
     if (!this.token) {
