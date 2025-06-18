@@ -32,7 +32,7 @@ interface HFPaper {
   };
 }
 
-export class HFPaperWorkflow implements Workflow {
+export class HFPaperWeeklyWorkflow implements Workflow {
   private crawler: FireCrawlAPI;
   private summarizer: AISummarizer;
   private renderer: ArticleTemplateRenderer;
@@ -71,13 +71,33 @@ export class HFPaperWorkflow implements Workflow {
   async process(): Promise<void> {
     await this.execute();
   }
+  private getISOWeekNumber(date: Date): number {
+    const tempDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    
+    // 设置到最近的周四（ISO周是以周四为参考）
+    const day = tempDate.getUTCDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    const isoDay = (day + 6) % 7; // 把周日变成6，其余前移
+    tempDate.setUTCDate(tempDate.getUTCDate() - isoDay + 3);
+
+    // 设置为这一年的第一天
+    const firstThursday = new Date(Date.UTC(tempDate.getUTCFullYear(), 0, 4));
+    const firstThursdayDay = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDay + 3);
+
+    // 计算第几周
+    const weekNumber = 1 + Math.round((tempDate.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    return weekNumber;
+  }
 
   private async crawlPaperList(): Promise<HFPaper[]> {
     try {
       //2025-03-14
       const date = new Date().toISOString().split('T')[0];
       const baseUrl = 'https://hf-mirror.com';
-      const response = await axios.get(`${baseUrl}/papers`, {
+      const weekNumber = this.getISOWeekNumber(new Date());
+      console.log(`开始总结第${weekNumber}周论文`);
+      const response = await axios.get(`${baseUrl}/papers/week/2025-W${weekNumber}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -87,7 +107,7 @@ export class HFPaperWorkflow implements Workflow {
       const papers: HFPaper[] = [];
 
       // 限制只处理前20篇论文$('article').slice(0, 20)
-      $('article').each((_, element) => {
+      $('article').slice(0, 20).each((_, element) => {
         const titleElement = $(element).find('h3');
         const authorElements = $(element).find('.author');
         const dateElement = $(element).find('.date');
@@ -265,7 +285,7 @@ ${paper.arxivUrl ? `arXiv链接：${paper.arxivUrl}` : `论文链接：${paper.u
     }));
 
     // 生成标题
-    const title = `Hugging Face 最新论文精选 ${new Date().toLocaleDateString()}`;
+    const title = `Hugging Face 本周最受欢迎论文TOP精选`;
     
     // 渲染模板
     const renderedTemplate = await this.renderer.render(templateData);
@@ -273,7 +293,7 @@ ${paper.arxivUrl ? `arXiv链接：${paper.arxivUrl}` : `论文链接：${paper.u
     // 生成封面图并上传
     const imageGenerator = await ImageGeneratorFactory.getInstance().getGenerator("ALIWANX21");
     const imageUrl = await imageGenerator.generate({
-      prompt: "AI论文研究精选，机器学习最新进展，具有学术气息，不要出现文字", 
+      prompt: "AI论文研究精选，人工智能最新进展，不要出现文字", 
       size: "1440*768"
     });
     const mediaId = await this.publisher.uploadImage(imageUrl);
@@ -287,3 +307,5 @@ ${paper.arxivUrl ? `arXiv链接：${paper.arxivUrl}` : `论文链接：${paper.u
     );
   }
 }
+
+

@@ -7,7 +7,7 @@ import { WeixinAIBenchWorkflow } from "./services/weixin-aibench.workflow";
 import { WeixinHelloGithubWorkflow } from "./services/weixin-hellogithub.workflow";
 import { PaperWorkflow } from "./services/paper.workflow";
 import { HFPaperWorkflow } from "./services/hfpaper.workflow";
-
+import { HFPaperWeeklyWorkflow } from "./services/hfpaper-weekly.workflow";
 async function bootstrap() {
   const configManager = ConfigManager.getInstance();
   await configManager.initDefaultConfigSources();
@@ -26,9 +26,11 @@ async function bootstrap() {
   // const paperWorkflow = new PaperWorkflow();
   // await paperWorkflow.process();
 
-
   const hfPaperWorkflow = new HFPaperWorkflow();
   await hfPaperWorkflow.process();
+
+//   const hfPaperWeeklyWorkflow = new HFPaperWeeklyWorkflow();
+//   await hfPaperWeeklyWorkflow.process();
 }
 
 bootstrap().catch(console.error);

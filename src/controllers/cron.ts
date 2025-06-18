@@ -5,6 +5,7 @@ import { WeixinAIBenchWorkflow } from "../services/weixin-aibench.workflow";
 import { WeixinHelloGithubWorkflow } from "../services/weixin-hellogithub.workflow";
 import { PaperWorkflow } from "../services/paper.workflow";
 import { HFPaperWorkflow } from "../services/hfpaper.workflow";
+import { HFPaperWeeklyWorkflow } from "../services/hfpaper-weekly.workflow";
 
 // 工作流映射表，用于存储不同日期对应的工作流数组
 const workflowMap = new Map<number, Workflow[]>();
@@ -17,33 +18,34 @@ const initializeWorkflows = () => {
   }
 
   // 周一的工作流 (1)
-  workflowMap.get(1)?.push(new WeixinWorkflow());
+  // workflowMap.get(1)?.push(new WeixinWorkflow());
   workflowMap.get(1)?.push(new HFPaperWorkflow());
   
   // 周二的工作流 (2)
-  workflowMap.get(2)?.push(new WeixinAIBenchWorkflow());
-  workflowMap.get(2)?.push(new PaperWorkflow());
+  // workflowMap.get(2)?.push(new WeixinAIBenchWorkflow());
+  // workflowMap.get(2)?.push(new PaperWorkflow());
   workflowMap.get(2)?.push(new HFPaperWorkflow());
   
   // 周三的工作流 (3)
-  workflowMap.get(3)?.push(new WeixinHelloGithubWorkflow());
+  // workflowMap.get(3)?.push(new WeixinHelloGithubWorkflow());
   workflowMap.get(3)?.push(new HFPaperWorkflow());
   
   // 周四的工作流 (4)
-  workflowMap.get(4)?.push(new WeixinWorkflow());
+  // workflowMap.get(4)?.push(new WeixinWorkflow());
   workflowMap.get(4)?.push(new HFPaperWorkflow());
   
   // 周五的工作流 (5)
-  workflowMap.get(5)?.push(new WeixinWorkflow());
+  // workflowMap.get(5)?.push(new WeixinWorkflow());
   workflowMap.get(5)?.push(new HFPaperWorkflow());
   
   // 周六的工作流 (6)
-  workflowMap.get(6)?.push(new WeixinWorkflow());
-  workflowMap.get(6)?.push(new HFPaperWorkflow());
+
+  workflowMap.get(6)?.push(new HFPaperWeeklyWorkflow());
   
   // 周日的工作流 (7)
-  workflowMap.get(7)?.push(new WeixinWorkflow());
-  workflowMap.get(7)?.push(new HFPaperWorkflow());
+
+  // workflowMap.get(7)?.push(new HFPaperWorkflow());
+
 };
 
 // 执行工作流的函数
@@ -84,12 +86,12 @@ export const initCronJobs = () => {
   // 初始化工作流
   initializeWorkflows();
   
-  // 每天上午5点执行
-  cron.schedule("0 5 * * *", () => {
+  // 每天19点执行
+  cron.schedule("0 19 * * *", () => {
     executeWorkflow();
   });
   
-  console.log("定时任务已初始化，将在每天上午5点执行");
+  console.log("定时任务已初始化，将在每天18点执行");
 };
 
 // 添加此函数以保持向后兼容性
