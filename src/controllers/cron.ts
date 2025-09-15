@@ -46,9 +46,9 @@ export const startCronJobs = () => {
   barkNotifier.notify("定时任务启动", "定时任务启动");
   logger.info("初始化定时任务...");
 
-  // 每天凌晨3点执行
+  // 每天18点执行
   cron.schedule(
-    "0 3 * * *",
+    "00 18 * * *",
     async () => {
       const dayOfWeek = new Date().getDay(); // 0是周日，1-6是周一到周六
       const adjustedDay = dayOfWeek === 0

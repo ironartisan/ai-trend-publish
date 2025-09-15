@@ -333,9 +333,18 @@ deno task start
 deno task test
 
 # 使用PM2进行进程管理（推荐）
+
 npm install -g pm2
-pm2 start --interpreter="deno" --interpreter-args="run --allow-all" src/main.ts
+pm2 start --interpreter="deno" --interpreter-args="run --allow-all" src/index.ts
+pm2 start src/index.ts --name news --restart-delay 30000 --max-restarts 3
+
+# 重启服务
+pm2 delete index
+pm2 start --interpreter="deno" --interpreter-args="run --allow-all" src/index.ts
 ```
+
+# 开启71上的数据库
+docker start 4df2c42d5f95
 
 5. 设置开机自启（可选）
 

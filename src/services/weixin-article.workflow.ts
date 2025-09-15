@@ -54,6 +54,7 @@ export class WeixinArticleWorkflow
   private vectorService: VectorService;
   private embeddingModel!: EmbeddingProvider;
   private existingVectors: { vector: number[]; content: string | null }[] = [];
+  private configManager: ConfigManager;
   private stats = {
     success: 0,
     failed: 0,
@@ -72,6 +73,7 @@ export class WeixinArticleWorkflow
     this.renderer = new WeixinArticleTemplateRenderer();
     this.contentRanker = new ContentRanker();
     this.vectorService = new VectorService();
+    this.configManager = ConfigManager.getInstance();
   }
 
   public getWorkflowStats(eventId: string) {
@@ -197,6 +199,15 @@ export class WeixinArticleWorkflow
         retries: { limit: 2, delay: "5 second", backoff: "exponential" },
         timeout: "15 minutes",
       }, async () => {
+        // 检查是否启用去重功能
+        const enableDeduplication = await this.configManager.get<boolean>("ENABLE_DEDUPLICATION");
+        
+        // 如果未启用去重，直接返回所有内容
+        if (enableDeduplication === false) {
+          logger.info("[去重] 去重功能已禁用，跳过去重步骤");
+          return allContents;
+        }
+        
         // 初始化 embedding 模型
         this.embeddingModel = await EmbeddingFactory.getInstance().getProvider({
           providerType: EmbeddingProviderType.DASHSCOPE,
