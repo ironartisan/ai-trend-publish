@@ -1,35 +1,50 @@
 import { getDataSources } from "../data-sources/getDataSources.ts";
-import { ContentRanker } from "@src/modules/content-rank/ai.content-ranker.ts";
-import { ContentPublisher } from "@src/modules/interfaces/publisher.interface.ts";
+import { ContentRanker } from "../modules/content-rank/ai.content-ranker.ts";
+import { ContentPublisher } from "../modules/interfaces/publisher.interface.ts";
 import {
   ContentScraper,
   ScrapedContent,
-} from "@src/modules/interfaces/scraper.interface.ts";
-import { ContentSummarizer } from "@src/modules/interfaces/summarizer.interface.ts";
-import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
-import { WeixinPublisher } from "@src/modules/publishers/weixin.publisher.ts";
+} from "../modules/interfaces/scraper.interface.ts";
+import { ContentSummarizer } from "../modules/interfaces/summarizer.interface.ts";
+import { BarkNotifier } from "../modules/notify/bark.notify.ts";
+import { WeixinPublisher } from "../modules/publishers/weixin.publisher.ts";
 import { WeixinTemplate } from "../modules/render/weixin/interfaces/article.type.ts";
-import { FireCrawlScraper } from "@src/modules/scrapers/fireCrawl.scraper.ts";
-import { TwitterScraper } from "@src/modules/scrapers/twitter.scraper.ts";
-import { AISummarizer } from "@src/modules/summarizer/ai.summarizer.ts";
-import { ImageGeneratorFactory } from "@src/providers/image-gen/image-generator-factory.ts";
+import { FireCrawlScraper } from "../modules/scrapers/fireCrawl.scraper.ts";
+import { TwitterScraper } from "../modules/scrapers/twitter.scraper.ts";
+import { AISummarizer } from "../modules/summarizer/ai.summarizer.ts";
+import { ImageGeneratorFactory } from "../providers/image-gen/image-generator-factory.ts";
 import { WeixinArticleTemplateRenderer } from "../modules/render/weixin/article.renderer.ts";
-import { ConfigManager } from "@src/utils/config/config-manager.ts";
+import { ConfigManager } from "../utils/config/config-manager.ts";
 import {
   WorkflowEntrypoint,
   WorkflowEnv,
   WorkflowEvent,
   WorkflowStep,
-} from "@src/works/workflow.ts";
-import { WorkflowTerminateError } from "@src/works/workflow-error.ts";
-import { Logger } from "@zilla/logger";
-import ProgressBar from "jsr:@deno-library/progress";
-import { ImageGeneratorType } from "@src/providers/interfaces/image-gen.interface.ts";
-import { VectorService } from "@src/services/vector-service.ts";
-import { EmbeddingProvider } from "@src/providers/interfaces/embedding.interface.ts";
-import { EmbeddingFactory } from "@src/providers/embedding/embedding-factory.ts";
-import { EmbeddingProviderType } from "@src/providers/interfaces/embedding.interface.ts";
-import { VectorSimilarityUtil } from "@src/utils/VectorSimilarityUtil.ts";
+} from "../works/workflow.ts";
+import { WorkflowTerminateError } from "../works/workflow-error.ts";
+// import { Logger } from "@zilla/logger";
+// import ProgressBar from "jsr:@deno-library/progress";
+
+// Temporary logger implementation
+class Logger {
+  constructor(private name: string) {}
+  info(...args: any[]) { console.log(`[${this.name}]`, ...args); }
+  error(...args: any[]) { console.error(`[${this.name}]`, ...args); }
+  warn(...args: any[]) { console.warn(`[${this.name}]`, ...args); }
+  debug(...args: any[]) { console.log(`[${this.name}]`, ...args); }
+}
+
+// Temporary ProgressBar implementation
+class ProgressBar {
+  constructor(private options: any) {}
+  render(data: any) { console.log(`Progress: ${data.completed}/${data.total}`); }
+}
+import { ImageGeneratorType } from "../providers/interfaces/image-gen.interface.ts";
+import { VectorService } from "./vector-service.ts";
+import { EmbeddingProvider } from "../providers/interfaces/embedding.interface.ts";
+import { EmbeddingFactory } from "../providers/embedding/embedding-factory.ts";
+import { EmbeddingProviderType } from "../providers/interfaces/embedding.interface.ts";
+import { VectorSimilarityUtil } from "../utils/VectorSimilarityUtil.ts";
 const logger = new Logger("weixin-article-workflow");
 
 interface WeixinWorkflowEnv {
@@ -55,6 +70,7 @@ export class WeixinArticleWorkflow
   private embeddingModel!: EmbeddingProvider;
   private existingVectors: { vector: number[]; content: string | null }[] = [];
   private configManager: ConfigManager;
+  protected override metricsCollector: any;
   private stats = {
     success: 0,
     failed: 0,
@@ -74,6 +90,26 @@ export class WeixinArticleWorkflow
     this.contentRanker = new ContentRanker();
     this.vectorService = new VectorService();
     this.configManager = ConfigManager.getInstance();
+    // Temporary MetricsCollector implementation
+    this.metricsCollector = {
+      startWorkflow: (workflowId: string, eventId: string) => {
+        console.log(`[MetricsCollector] Workflow ${workflowId} event ${eventId} started`);
+      },
+      endWorkflow: (workflowId: string, eventId: string, error?: Error) => {
+        console.log(`[MetricsCollector] Workflow ${workflowId} event ${eventId} ended`, error ? `with error: ${error.message}` : 'successfully');
+      },
+      recordStep: (workflowId: string, eventId: string, stepMetric: any) => {
+        console.log(`[MetricsCollector] Step recorded:`, stepMetric);
+      },
+      getWorkflowEventMetrics: (workflowId: string, eventId: string) => ({
+        eventId,
+        startTime: Date.now(),
+        endTime: Date.now(),
+        duration: 0,
+        status: 'success',
+        steps: []
+      })
+    };
   }
 
   public getWorkflowStats(eventId: string) {
@@ -160,9 +196,10 @@ export class WeixinArticleWorkflow
           );
           contents.push(...sourceContents);
           totalArticles += sourceContents.length;
-          await scrapeProgress.render(++scrapeCompleted, {
-            title:
-              `抓取 FireCrawl: ${source.identifier}  | 已获取文章: ${totalArticles}篇`,
+          scrapeProgress.render({
+            completed: ++scrapeCompleted,
+            total: totalSources,
+            title: `抓取 FireCrawl: ${source.identifier}  | 已获取文章: ${totalArticles}篇`,
           });
         }
 
@@ -180,9 +217,10 @@ export class WeixinArticleWorkflow
           );
           contents.push(...sourceContents);
           totalArticles += sourceContents.length;
-          await scrapeProgress.render(++scrapeCompleted, {
-            title:
-              `抓取 Twitter: ${source.identifier} | 已获取文章: ${totalArticles}篇`,
+          scrapeProgress.render({
+            completed: ++scrapeCompleted,
+            total: totalSources,
+            title: `抓取 Twitter: ${source.identifier} | 已获取文章: ${totalArticles}篇`,
           });
         }
 
@@ -259,7 +297,10 @@ export class WeixinArticleWorkflow
                 error,
               );
             }
-            await embedProgress.render(++embedCompleted);
+            embedProgress.render({
+              completed: ++embedCompleted,
+              total: allContents.length,
+            });
           }),
         );
 
@@ -365,7 +406,9 @@ export class WeixinArticleWorkflow
 
         await Promise.all(topContents.map(async (content) => {
           await this.processContent(content);
-          await processProgress.render(++processCompleted, {
+          processProgress.render({
+            completed: ++processCompleted,
+            total: topContents.length,
             title: `已处理: ${content.title?.slice(0, 5) || "无标题"}...`,
           });
         }));
@@ -386,7 +429,7 @@ export class WeixinArticleWorkflow
             (content) => ({
               id: content.id,
               title: content.title,
-              content: content.content,
+              content: content.content + `\n\n<div style="margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 6px; border-left: 3px solid #4caf50;"><strong>📎 原文链接：</strong><br/><a href="${content.url}" style="color: #4caf50; text-decoration: none; word-break: break-all;">${content.url}</a></div>`,
               url: content.url,
               publishDate: content.publishDate,
               metadata: content.metadata,
@@ -420,7 +463,7 @@ export class WeixinArticleWorkflow
           const media = await this.publisher.uploadImage(imageUrl);
 
           // 渲染模板
-          const template = await this.renderer.render(templateData);
+          const template = await this.renderer.render(templateData, 'default');
 
           return {
             summaryTitle: title,
@@ -445,6 +488,7 @@ export class WeixinArticleWorkflow
       });
 
       // 9. 完成报告
+      const processedUrls = processedContents.map(content => `• ${content.title}: ${content.url}`).join('\n');
       const summary = `
         工作流执行完成
         - 数据源: ${totalSources} 个
@@ -452,7 +496,10 @@ export class WeixinArticleWorkflow
         - 失败: ${this.stats.failed} 个
         - 内容: ${this.stats.contents} 条
         - 重复: ${this.stats.duplicates} 条
-        - 发布: 成功`.trim();
+        - 发布: 成功
+        
+        📎 处理的链接:
+        ${processedUrls}`.trim();
 
       logger.info(`[工作流完成] ${summary}`);
 
@@ -481,21 +528,60 @@ export class WeixinArticleWorkflow
     source: { identifier: string },
     scraper: ContentScraper,
   ): Promise<ScrapedContent[]> {
-    try {
-      logger.debug(`[${type}] 抓取: ${source.identifier}`);
-      const contents = await scraper.scrape(source.identifier);
-      this.stats.success++;
-      return contents;
-    } catch (error) {
-      this.stats.failed++;
-      const message = error instanceof Error ? error.message : String(error);
-      logger.error(`[${type}] ${source.identifier} 抓取失败:`, message);
-      await this.notifier.warning(
-        `${type}抓取失败`,
-        `源: ${source.identifier}\n错误: ${message}`,
-      );
-      return [];
+    const maxRetries = 2;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          logger.info(`[${type}] 重试抓取 (${attempt}/${maxRetries}): ${source.identifier}`);
+          // 重试前等待一段时间
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        } else {
+          logger.debug(`[${type}] 抓取: ${source.identifier}`);
+        }
+        
+        const contents = await scraper.scrape(source.identifier);
+        this.stats.success++;
+        
+        if (attempt > 0) {
+          logger.info(`[${type}] 重试成功: ${source.identifier}`);
+        }
+        
+        return contents;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const message = lastError.message;
+        
+        // 检查是否是不可重试的错误
+        const isRetryableError = !message.includes("网站加载失败") && 
+                                !message.includes("Status code: 500") &&
+                                !message.includes("failing to load in the browser");
+        
+        if (!isRetryableError || attempt === maxRetries) {
+          this.stats.failed++;
+          logger.error(`[${type}] ${source.identifier} 抓取失败 (尝试 ${attempt + 1}/${maxRetries + 1}):`, message);
+          
+          // 根据错误类型提供不同的建议
+          let suggestion = "";
+          if (message.includes("网站加载失败") || message.includes("Status code: 500")) {
+            suggestion = "\n建议: 目标网站可能暂时不可用或有反爬虫机制，请稍后重试";
+          } else if (message.includes("未获取到有效内容")) {
+            suggestion = "\n建议: 网站结构可能已变化，需要更新抓取逻辑";
+          }
+          
+          await this.notifier.warning(
+            `${type}抓取失败`,
+            `源: ${source.identifier}\n错误: ${message}${suggestion}`,
+          );
+          return [];
+        }
+        
+        logger.warn(`[${type}] ${source.identifier} 抓取失败 (尝试 ${attempt + 1}/${maxRetries + 1}), 将重试:`, message);
+      }
     }
+    
+    return [];
   }
 
   private async processContent(content: ScrapedContent): Promise<void> {

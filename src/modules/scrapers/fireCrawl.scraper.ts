@@ -86,8 +86,21 @@ export class FireCrawlScraper implements ContentScraper {
         },
       });
 
-      if (!scrapeResult.success || !scrapeResult.extract?.stories) {
-        throw new Error(scrapeResult.error || "未获取到有效内容");
+      if (!scrapeResult.success) {
+        const errorMsg = scrapeResult.error || "未知错误";
+        logger.error(`FireCrawl API调用失败: ${errorMsg}`);
+        
+        // 检查是否是500错误或特定的浏览器加载失败错误
+        if (errorMsg.includes("Status code: 500") || errorMsg.includes("failing to load in the browser")) {
+          throw new Error(`网站加载失败: ${sourceId} - ${errorMsg}. 这可能是由于目标网站的反爬虫机制、服务器问题或网络连接问题导致的。`);
+        }
+        
+        throw new Error(`FireCrawl抓取失败: ${errorMsg}`);
+      }
+      
+      if (!scrapeResult.extract?.stories) {
+        logger.warn(`FireCrawl返回成功但未提取到stories数据: ${sourceId}`);
+        throw new Error("未获取到有效内容 - 可能是网站结构变化或内容格式不匹配");
       }
 
       // 使用 zod 验证返回数据
