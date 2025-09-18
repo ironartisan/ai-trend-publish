@@ -22,7 +22,8 @@ const initializeWorkflows = () => {
   workflowMap.get(1)?.push(new HFPaperWorkflow());
   
   // 周二的工作流 (2)
-  // workflowMap.get(2)?.push(new WeixinAIBenchWorkflow());
+  // workflowMap.get(2)?.push(newt
+  //  WeixinAIBenchWorkflow());
   // workflowMap.get(2)?.push(new PaperWorkflow());
   workflowMap.get(2)?.push(new HFPaperWorkflow());
   

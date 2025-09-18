@@ -216,6 +216,9 @@ BARK_URL="your_key"
 
 4. 启动项目
 
+# 依赖mysql
+docker start  trendfinder-mysql
+
 ```bash
 # 测试模式
 npm run test

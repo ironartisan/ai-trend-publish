@@ -29,8 +29,8 @@ async function bootstrap() {
   const hfPaperWorkflow = new HFPaperWorkflow();
   await hfPaperWorkflow.process();
 
-//   const hfPaperWeeklyWorkflow = new HFPaperWeeklyWorkflow();
-//   await hfPaperWeeklyWorkflow.process();
+  // const hfPaperWeeklyWorkflow = new HFPaperWeeklyWorkflow();
+  // await hfPaperWeeklyWorkflow.process();
 }
 
 bootstrap().catch(console.error);
