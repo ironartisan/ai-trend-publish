@@ -112,19 +112,52 @@ export class FireCrawlScraper implements ContentScraper {
           Date.now() - startTime
         }ms`,
       );
-      return validatedData.stories.map((story) => ({
-        id: this.generateId(story.link),
-        title: story.headline,
-        content: story.content,
-        url: story.link,
-        publishDate: formatDate(story.date_posted),
-        score: 0,
-        metadata: {
-          source: "fireCrawl",
-          originalUrl: story.link,
-          datePosted: story.date_posted,
-        },
-      }));
+      return validatedData.stories.map((story) => {
+        // 保存原始链接
+        const originalUrl = story.link;
+        // 修复机器之心网站链接格式
+        let url = story.link;
+        if (url.includes('jiqizhixin.com')) {
+          // 处理多种可能的链接格式
+          if (url.includes('/article/')) {
+            // 情况1: jiqizhixin.com/article/数字 格式
+            const match = url.match(/jiqizhixin\.com\/article\/(\d+)/);
+            if (match && match[1]) {
+              const articleId = match[1];
+              const dateStr = story.date_posted.split(' ')[0].replace(/-/g, '-');
+              url = url.replace(/\/article\/\d+/, `/articles/${dateStr}-${articleId}`);
+              logger.debug(`修复机器之心链接(数字ID): ${story.link} -> ${url}`);
+            }
+          } else if (url.includes('/article/') && !url.match(/\/article\/\d+/)) {
+            // 情况2: jiqizhixin.com/article/标题 格式
+            const urlParts = url.split('/');
+            const lastPart = urlParts[urlParts.length - 1];
+            const dateStr = story.date_posted.split(' ')[0].replace(/-/g, '-');
+            url = url.replace(/\/article\/[^\/]+$/, `/articles/${dateStr}-1`);
+            logger.debug(`修复机器之心链接(标题): ${story.link} -> ${url}`);
+          } else {
+            // 情况3: 其他格式，尝试构建标准URL
+            const dateStr = story.date_posted.split(' ')[0].replace(/-/g, '-');
+            const domain = url.match(/(https?:\/\/[^\/]+)/)?.[1] || 'https://www.jiqizhixin.com';
+            url = `${domain}/articles/${dateStr}-1`;
+            logger.debug(`修复机器之心链接(其他): ${story.link} -> ${url}`);
+          }
+        }
+        
+        return {
+          id: this.generateId(url),
+          title: story.headline,
+          content: story.content,
+          url: url,
+          publishDate: formatDate(story.date_posted),
+          score: 0,
+          metadata: {
+            source: "fireCrawl",
+            originalUrl: originalUrl,  // 使用原始URL
+            datePosted: story.date_posted,
+          },
+        };
+      });
     } catch (error) {
       logger.error("FireCrawl抓取失败:", error);
       throw error;
