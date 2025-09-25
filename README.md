@@ -250,6 +250,7 @@ npm run build
 3. 使用 PM2 启动服务
 
 ```bash
+pm2 delete paper
 pm2 start dist/index.js --name paper --restart-delay 30000 --max-restarts 3
 ```
 
