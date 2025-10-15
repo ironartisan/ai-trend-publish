@@ -20,12 +20,12 @@ export const sourceConfigs: SourceConfig = {
       identifier:
         "https://www.reuters.com/technology/artificial-intelligence/",
     },
-    { identifier: "https://www.jiqizhixin.com" }, // 机器之心
+    // { identifier: "https://www.jiqizhixin.com" }, // 机器之心
     { identifier: "https://simonwillison.net/" },
     { identifier: "https://www.aibase.com/zh/daily" },
     { identifier: "https://m.weibo.cn/u/1402400261?luicode=10000011&lfid=231583" },
     { identifier: "https://m.weibo.cn/u/1727858283?t=0&luicode=10000011&lfid=1076031402400261" },
-    // { identifier: "https://towardsdatascience.com/latest/" },
+    { identifier: "https://towardsdatascience.com/latest/" },
     // { identifier: "https://buttondown.com/ainews/archive/" },
     // { identifier: "https://medium.com/?tag=machine-learning" },
     
