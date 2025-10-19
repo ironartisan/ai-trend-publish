@@ -158,16 +158,25 @@ export class HFPaperWorkflow extends WorkflowEntrypoint<HFPaperWorkflowEnv, HFPa
         const date = new Date().toLocaleDateString();
         const title = `最新AI论文精选 | ${date}`;
         
-        // 生成封面图片
-        const imageGenerator = await ImageGeneratorFactory.getInstance()
-          .getGenerator("ALIWANX_POSTER");
-        const imageUrl = await imageGenerator.generate({
-          title: "AI前沿研究",
-          sub_title: `论文精选 ${date}`,
-          prompt_text_zh: "人工智能论文 | 前沿研究 | 科技进展 | 学术前沿",
-          generate_mode: "generate",
-          generate_num: 1,
-        });
+        // 生成封面图片，失败时使用默认图片
+        let imageUrl: string;
+        try {
+          logger.info("[封面生成] 开始生成AI封面图片");
+          const imageGenerator = await ImageGeneratorFactory.getInstance()
+            .getGenerator("ALIWANX_POSTER");
+          imageUrl = await imageGenerator.generate({
+            title: "AI前沿研究",
+            sub_title: `论文精选 ${date}`,
+            prompt_text_zh: "人工智能论文 | 前沿研究 | 科技进展 | 学术前沿",
+            generate_mode: "generate",
+            generate_num: 1,
+          });
+          logger.info("[封面生成] AI封面图片生成成功");
+        } catch (error) {
+          logger.warn("[封面生成] AI图片生成失败，使用默认封面:", error);
+          // 使用项目中的默认图片
+          imageUrl = "file:///home/chenyuli/github/push/ai-trend-publish/examples/news.png";
+        }
 
         // 上传封面图片
         const mediaId = await this.publisher.uploadImage(imageUrl);

@@ -165,17 +165,26 @@ export class WeixinHelloGithubWorkflow extends WorkflowEntrypoint<
       }, async () => {
         logger.info("[封面生成] 开始生成封面图片");
         const firstItem = items[0];
-        const imageGenerator = await ImageGeneratorFactory.getInstance()
-          .getGenerator(ImageGeneratorType.PDD920_LOGO);
-        const url = await imageGenerator.generate({
-          t: "@AISPACE科技空间",
-          text: `本期精选 GitHub 热门${firstItem.name}`,
-          type: "json",
-        });
+        
+        let url: string;
+        try {
+          const imageGenerator = await ImageGeneratorFactory.getInstance()
+            .getGenerator(ImageGeneratorType.PDD920_LOGO);
+          url = await imageGenerator.generate({
+            t: "@AISPACE科技空间",
+            text: `本期精选 GitHub 热门${firstItem.name}`,
+            type: "json",
+          }) as string;
+          logger.info("[封面生成] AI封面图片生成成功");
+        } catch (error) {
+          logger.warn("[封面生成] AI图片生成失败，使用默认封面:", error);
+          // 使用项目中的默认图片
+          url = "file:///home/chenyuli/github/push/ai-trend-publish/examples/news.png";
+        }
 
         // 上传封面图片获取 mediaId
         logger.info("[封面上传] 开始上传封面图片");
-        const media = await this.publisher.uploadImage(url as string);
+        const media = await this.publisher.uploadImage(url);
         return media;
       });
 

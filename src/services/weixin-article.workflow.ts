@@ -446,18 +446,27 @@ export class WeixinArticleWorkflow
             return t.slice(0, 64);
           });
 
-          // 生成封面图片
-          const imageGenerator = await ImageGeneratorFactory.getInstance()
-            .getGenerator(ImageGeneratorType.ALIWANX_POSTER);
-          const imageUrl = await imageGenerator.generate({
-            title: title.split(" | ")[1].trim().slice(0, 30),
-            sub_title: new Date().toLocaleDateString() + " AI速递",
-            prompt_text_zh: `科技前沿资讯 | 人工智能新闻 | 每日AI快报 - ${
-              title.split(" | ")[1].trim().slice(0, 30)
-            }`,
-            generate_mode: "generate",
-            generate_num: 1,
-          });
+          // 生成封面图片，失败时使用默认图片
+          let imageUrl: string;
+          try {
+            logger.info("[封面生成] 开始生成AI封面图片");
+            const imageGenerator = await ImageGeneratorFactory.getInstance()
+              .getGenerator(ImageGeneratorType.ALIWANX_POSTER);
+            imageUrl = await imageGenerator.generate({
+              title: title.split(" | ")[1].trim().slice(0, 30),
+              sub_title: new Date().toLocaleDateString() + " AI速递",
+              prompt_text_zh: `科技前沿资讯 | 人工智能新闻 | 每日AI快报 - ${
+                title.split(" | ")[1].trim().slice(0, 30)
+              }`,
+              generate_mode: "generate",
+              generate_num: 1,
+            });
+            logger.info("[封面生成] AI封面图片生成成功");
+          } catch (error) {
+            logger.warn("[封面生成] AI图片生成失败，使用默认封面:", error);
+            // 使用项目中的默认图片
+            imageUrl = "file:///home/chenyuli/github/push/ai-trend-publish/examples/news.png";
+          }
 
           // 上传封面图片
           const media = await this.publisher.uploadImage(imageUrl);

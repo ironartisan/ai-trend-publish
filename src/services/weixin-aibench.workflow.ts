@@ -49,17 +49,24 @@ export class WeixinAIBenchWorkflow extends WorkflowEntrypoint<
   }
 
   async generateCoverImage(title: string): Promise<string> {
-    // 生成封面图并获取URL
-    const imageGenerator = await ImageGeneratorFactory.getInstance()
-      .getGenerator(ImageGeneratorType.PDD920_LOGO);
-    const imageResult = await imageGenerator.generate({
-      t: "@AISPACE科技空间",
-      text: title,
-      type: "json",
-    });
-
-    // 由于type为json，imageResult一定是包含url的对象
-    return imageResult as string;
+    // 生成封面图并获取URL，失败时使用默认图片
+    try {
+      logger.info("[封面生成] 开始生成AI封面图片");
+      const imageGenerator = await ImageGeneratorFactory.getInstance()
+        .getGenerator(ImageGeneratorType.PDD920_LOGO);
+      const imageResult = await imageGenerator.generate({
+        t: "@AISPACE科技空间",
+        text: title,
+        type: "json",
+      });
+      logger.info("[封面生成] AI封面图片生成成功");
+      // 由于type为json，imageResult一定是包含url的对象
+      return imageResult as string;
+    } catch (error) {
+      logger.warn("[封面生成] AI图片生成失败，使用默认封面:", error);
+      // 使用项目中的默认图片
+      return "file:///home/chenyuli/github/push/ai-trend-publish/examples/news.png";
+    }
   }
 
   async run(
