@@ -13,6 +13,7 @@ import { ImageGeneratorFactory } from "../providers/image-gen/image-generator-fa
 import { WeixinTemplate } from '../modules/render/interfaces/template.type';
 import * as cheerio from 'cheerio';
 import { getPaperSummarizerSystemPrompt, getPaperSummarizerUserPrompt } from "../prompts/paper-summarizer.prompt";
+import { RetryUtil } from '../utils/retry.util';
 
 interface HFPaper {
   title: string;
@@ -97,11 +98,23 @@ export class HFPaperWeeklyWorkflow implements Workflow {
       const baseUrl = 'https://hf-mirror.com';
       const weekNumber = this.getISOWeekNumber(new Date());
       console.log(`开始总结第${weekNumber}周论文`);
-      const response = await axios.get(`${baseUrl}/papers/week/2025-W${weekNumber}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      
+      // 使用重试机制处理HTTP 429错误
+      const response = await RetryUtil.retryOperation(
+        async () => {
+          return await axios.get(`${baseUrl}/papers/week/2025-W${weekNumber}`, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            timeout: 30000 // 30秒超时
+          });
+        },
+        {
+          maxRetries: 5,
+          baseDelay: 2000, // 2秒基础延迟
+          useExponentialBackoff: true
         }
-      });
+      );
 
       const $ = cheerio.load(response.data);
       const papers: HFPaper[] = [];
@@ -140,11 +153,22 @@ export class HFPaperWeeklyWorkflow implements Workflow {
     
     for (const paper of papers) {
       try {
-        const response = await axios.get(paper.url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        // 使用重试机制处理HTTP 429错误
+        const response = await RetryUtil.retryOperation(
+          async () => {
+            return await axios.get(paper.url, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              },
+              timeout: 30000 // 30秒超时
+            });
+          },
+          {
+            maxRetries: 3,
+            baseDelay: 1500, // 1.5秒基础延迟
+            useExponentialBackoff: true
           }
-        });
+        );
 
         const $ = cheerio.load(response.data);
         
@@ -195,7 +219,7 @@ export class HFPaperWeeklyWorkflow implements Workflow {
         });
 
         // 添加延迟，避免请求过快
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // 增加到3秒延迟
 
       } catch (error) {
         console.error(`Error fetching details for ${paper.title}:`, error);
