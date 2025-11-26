@@ -110,8 +110,8 @@ export class HFPaperWeeklyWorkflow implements Workflow {
           });
         },
         {
-          maxRetries: 5,
-          baseDelay: 2000, // 2秒基础延迟
+          maxRetries: 20,
+          baseDelay: 5000, // 2秒基础延迟
           useExponentialBackoff: true
         }
       );

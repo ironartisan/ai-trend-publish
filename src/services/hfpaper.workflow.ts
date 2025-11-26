@@ -77,7 +77,7 @@ export class HFPaperWorkflow implements Workflow {
     try {
       //2025-03-14
       const date = new Date().toISOString().split('T')[0];
-      const baseUrl = 'https://hf-mirror.com';
+      const baseUrl = 'https://hf-cdn.sufy.com'; // https://huggingface.co https://hf-cdn.sufy.com https://hf-mirror.com
       
       // 使用重试机制处理HTTP 429错误
       const response = await RetryUtil.retryOperation(
@@ -144,8 +144,8 @@ export class HFPaperWorkflow implements Workflow {
             });
           },
           {
-            maxRetries: 3,
-            baseDelay: 1500, // 1.5秒基础延迟
+            maxRetries: 10,
+            baseDelay: 5000, // 5秒基础延迟
             useExponentialBackoff: true
           }
         );

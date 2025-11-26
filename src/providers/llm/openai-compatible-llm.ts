@@ -106,8 +106,8 @@ export class OpenAICompatibleLLM implements LLMProvider {
                 },
                 body: JSON.stringify(requestBody),
                 timeout: 60000, // 60秒超时
-                retries: 3,     // 最多重试3次
-                retryDelay: 1000 // 重试间隔1秒
+                retries: 30,     // 最多重试30次
+                retryDelay: 5000 // 重试间隔5秒
             });
         } catch (error) {
             console.error('Debug - Error details:', error);
