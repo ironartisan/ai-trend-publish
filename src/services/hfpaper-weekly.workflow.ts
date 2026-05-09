@@ -95,14 +95,14 @@ export class HFPaperWeeklyWorkflow implements Workflow {
     try {
       //2025-03-14
       const date = new Date().toISOString().split('T')[0];
-      const baseUrl = 'https://hf-mirror.com';
+      const baseUrl = 'https://hf-mirror.com'; // https://hf-cdn.sufy.com
       const weekNumber = this.getISOWeekNumber(new Date());
       console.log(`开始总结第${weekNumber}周论文`);
       
       // 使用重试机制处理HTTP 429错误
       const response = await RetryUtil.retryOperation(
         async () => {
-          return await axios.get(`${baseUrl}/papers/week/2025-W${weekNumber}`, {
+          return await axios.get(`${baseUrl}/papers/week/2026-W${weekNumber}`, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             },
@@ -111,7 +111,7 @@ export class HFPaperWeeklyWorkflow implements Workflow {
         },
         {
           maxRetries: 20,
-          baseDelay: 5000, // 2秒基础延迟
+          baseDelay: 10000, // 10秒基础延迟
           useExponentialBackoff: true
         }
       );

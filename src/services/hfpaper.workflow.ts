@@ -77,7 +77,7 @@ export class HFPaperWorkflow implements Workflow {
     try {
       //2025-03-14
       const date = new Date().toISOString().split('T')[0];
-      const baseUrl = 'https://hf-cdn.sufy.com'; // https://huggingface.co https://hf-cdn.sufy.com https://hf-mirror.com
+      const baseUrl = 'https://hf-mirror.com'; // https://huggingface.co https://hf-cdn.sufy.com https://hf-mirror.com
       
       // 使用重试机制处理HTTP 429错误
       const response = await RetryUtil.retryOperation(
@@ -91,7 +91,7 @@ export class HFPaperWorkflow implements Workflow {
         },
         {
           maxRetries: 5,
-          baseDelay: 2000, // 2秒基础延迟
+          baseDelay: 5000, // 2秒基础延迟
           useExponentialBackoff: true
         }
       );
@@ -145,7 +145,7 @@ export class HFPaperWorkflow implements Workflow {
           },
           {
             maxRetries: 10,
-            baseDelay: 5000, // 5秒基础延迟
+            baseDelay: 8000, // 5秒基础延迟
             useExponentialBackoff: true
           }
         );
@@ -199,7 +199,7 @@ export class HFPaperWorkflow implements Workflow {
         });
 
         // 添加延迟，避免请求过快
-        await new Promise(resolve => setTimeout(resolve, 3000)); // 增加到3秒延迟
+        await new Promise(resolve => setTimeout(resolve, 5000)); // 增加到3秒延迟
 
       } catch (error) {
         console.error(`Error fetching details for ${paper.title}:`, error);

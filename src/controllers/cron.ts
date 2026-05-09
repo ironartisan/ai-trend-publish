@@ -41,11 +41,12 @@ const initializeWorkflows = () => {
   
   // 周六的工作流 (6)
 
-  workflowMap.get(6)?.push(new HFPaperWeeklyWorkflow());
+  // workflowMap.get(6)?.push(new HFPaperWeeklyWorkflow());
   
   // 周日的工作流 (7)
 
   // workflowMap.get(7)?.push(new HFPaperWorkflow());
+  workflowMap.get(7)?.push(new HFPaperWeeklyWorkflow());
 
 };
 

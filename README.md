@@ -251,7 +251,7 @@ npm run build
 
 ```bash
 pm2 delete paper
-pm2 start dist/index.js --name paper --restart-delay 30000 --max-restarts 10
+pm2 start dist/index.js --name paper --restart-delay 30000 --max-restarts 10 --watch
 ```
 
 ### 方式二：Docker 部署
